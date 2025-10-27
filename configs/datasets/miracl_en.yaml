@@ -1,0 +1,13 @@
+name: miracl-en
+data_dir: ./datasets
+download:
+  url: https://storage.googleapis.com/miracl/v1/datasets/miracl-v1.0-en-queries.tar
+  filename: miracl-v1.0-en-queries.tar
+extract:
+  archive_type: tar.gz
+corpus_relative_path: miracl-v1.0-en-queries/corpus.tsv
+questions_relative_path: miracl-v1.0-en-queries/dev-queries.jsonl
+adapter: miracl
+adapter_kwargs:
+  language: en
+description: MIRACL English subset (dev queries + corpus) prepared for HP-RAG ingestion.

@@ -1,0 +1,40 @@
+[project]
+name = "hp-rug"
+version = "0.1.0"
+description = "Evaluation harness for Hyperlink-Driven RAG vs. vector RAG"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "llama-index>=0.10.0",
+    "faiss-cpu>=1.7.4",
+    "llama-index-vector-stores-faiss>=0.1.0",
+    "deepeval>=0.20.0",
+    "pydantic>=2.6.0",
+    "sqlalchemy>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0",
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.2.0",
+    "pytest>=7.4.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.2.0",
+    "pytest>=7.4.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

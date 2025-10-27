@@ -1,0 +1,11 @@
+name: beir-fiqa
+data_dir: ./datasets
+download:
+  url: https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/fiqa.zip
+  filename: fiqa.zip
+extract:
+  archive_type: zip
+corpus_relative_path: fiqa/corpus.jsonl
+questions_relative_path: fiqa/queries.jsonl
+adapter: beir
+description: BEIR FiQA financial QA benchmark packaged for ingestion via the BEIR adapter.

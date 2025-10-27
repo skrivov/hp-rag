@@ -1,0 +1,18 @@
+experiment_name: fakes_smoke
+corpus: ./data/fakes
+evaluation:
+  suite: smoke
+  questions: ./data/fakes/questions.jsonl
+  output: ./artifacts/fakes/eval.json
+  table_format: plain
+sqlite_db: ./artifacts/fakes/hyperlink.db
+faiss_dir: ./artifacts/fakes/faiss_index
+rebuild: true
+include_vector: false
+retrievers:
+  - type: hp_rag
+    llm_model: gpt-4o-mini
+    max_sections: 3
+    neighbor_window: 1
+hp_rag:
+  toc_limit: 50

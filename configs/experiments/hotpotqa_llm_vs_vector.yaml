@@ -1,0 +1,24 @@
+experiment_name: hotpotqa_llm_vs_vector
+dataset_configs:
+  - ../datasets/hotpotqa.yaml
+rebuild: true
+sqlite_db: ./artifacts/hotpotqa/hyperlink.db
+faiss_dir: ./artifacts/hotpotqa/faiss_index
+embedding_model: text-embedding-3-small
+include_vector: true
+retrievers:
+  - type: hp_rag
+    llm_model: gpt-4o-mini
+    max_sections: 5
+    neighbor_window: 1
+    toc_limit: 100
+  - type: vector
+    embedding_model: text-embedding-3-small
+    faiss_index: ./artifacts/hotpotqa/faiss_index
+    top_k: 3
+evaluation:
+  suite: baseline
+  questions: ./datasets/hotpotqa/questions.jsonl
+  output: ./artifacts/hotpotqa/eval.json
+  table_output: ./artifacts/hotpotqa/comparison.md
+  table_format: md

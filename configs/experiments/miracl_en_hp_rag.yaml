@@ -1,0 +1,17 @@
+experiment_name: miracl_en_hp_rag
+dataset_configs:
+  - ../datasets/miracl_en.yaml
+rebuild: true
+sqlite_db: ./artifacts/miracl/hyperlink.db
+retrievers:
+  - type: hp_rag
+    llm_model: gpt-4o-mini
+    max_sections: 6
+    neighbor_window: 1
+hp_rag:
+  toc_limit: 150
+evaluation:
+  suite: miracl-dev
+  questions: ./datasets/miracl-en/miracl-v1.0-en-queries/dev-queries.jsonl
+  output: ./artifacts/miracl/en_eval.json
+  table_format: plain

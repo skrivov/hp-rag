@@ -1,0 +1,10 @@
+name: hotpotqa
+data_dir: ./datasets
+download:
+  url: https://hotpotqa.s3.us-east-2.amazonaws.com/wiki/wiki.zip
+  filename: wiki.zip
+extract:
+  archive_type: zip
+corpus_relative_path: wiki/wiki.json
+adapter: hotpotqa
+description: HotpotQA supporting-facts corpus released by the official dataset maintainers.
