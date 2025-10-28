@@ -1,0 +1,162 @@
+{
+  "file_name_pdf": "data/contracts/IMSA-AR-NOVA-2025-001_International_Master_Supply_Agreement_Electronics_Components.pdf",
+  "file_name_queries": "data/contracts/IMSA-AR-NOVA-2025-001_queries.json",
+  "file_name_markdown": "data/contracts/IMSA-AR-NOVA-2025-001_International_Master_Supply_Agreement_Electronics_Components.md",
+  "metadata": {
+    "title": "International Master Supply Agreement (Electronics Components)",
+    "incoterms": "FOB Shanghai (Incoterms 2020)",
+    "importer_of_record": "Buyer (Apex Robotics)",
+    "tariff_adjustment_policy": "Section 9 Tariff Adjustment formula; threshold 3%; annual cap 8% per product family. Buyer pays import duties (Section 8).",
+    "baseline_duty_and_hs_reference": "Schedule A lists HS codes and baseline US duty rates for Chinese-origin goods."
+  },
+  "queries": [
+    {
+      "question": "Compute our net exposure if the US raises Section 301 tariffs on HS 8538.90 from 25% to 35% effective next month. We have an undelivered PO for 12,000 units of AR-PCB-X1 with a CIF customs value of $50 per unit. Apply the contract\u2019s tariff adjustment, thresholds and caps. Who pays what and can we cancel?",
+      "answer": {
+        "summary": "Buyer pays the new 35% duty at import and owes a price increase to Seller equal to the 10% duty delta \u00d7 customs value, subject to the 3% threshold and 8% annual cap; cancellation of undelivered POs is allowed if no agreement in 30 days.",
+        "who_bears_tariff": "Buyer (Importer-of-Record under Section 8.1)",
+        "incoterm": "FOB Shanghai (Buyer arranges import)",
+        "policy_citations": [
+          "Section 8",
+          "Section 9",
+          "Schedule A (HS 8538.90 baseline 25%)"
+        ],
+        "calculations": {
+          "tariff_old_rate": 0.25,
+          "tariff_new_rate": 0.35,
+          "tariff_delta_rate": 0.1,
+          "customs_value_per_unit_usd": 50.0,
+          "units": 12000,
+          "price_adjustment_per_unit_usd": 5.0,
+          "price_adjustment_total_usd": 60000.0,
+          "landed_cost_delta_pct": 0.1,
+          "threshold_triggered_(>3%)": true,
+          "annual_cap_pct": 0.08,
+          "cap_applied": false
+        },
+        "exposure_breakdown": {
+          "duty_paid_at_border_usd": 210000.0,
+          "incremental_duty_vs_baseline_usd": 59999.99999999999,
+          "contract_price_adjustment_usd": 60000.0
+        },
+        "rights_and_remedies": {
+          "repricing_window": "good-faith adjustment per Section 9",
+          "cancel_pos_if_no_agreement_30_days": true
+        },
+        "assumptions": [
+          "Customs value equals CIF $50 as stated.",
+          "Current year cap headroom > 8% not exceeded."
+        ]
+      }
+    },
+    {
+      "question": "If the US reduces tariffs on HS 8542.31 from 25% to 10% for Chinese origin, what price change applies to AR-IC-M4 for undelivered quantities with CIF $30/unit? Estimate the decrease and state who benefits.",
+      "answer": {
+        "summary": "Price decreases by the 15% duty delta \u00d7 customs value for undelivered units; Buyer still pays the reduced 10% duty at import.",
+        "who_bears_tariff": "Buyer (Section 8) pays 10% instead of 25%.",
+        "policy_citations": [
+          "Section 8",
+          "Section 9",
+          "Schedule A (HS 8542.31 baseline 25%)"
+        ],
+        "calculations": {
+          "tariff_old_rate": 0.25,
+          "tariff_new_rate": 0.1,
+          "tariff_delta_rate": -0.15,
+          "customs_value_per_unit_usd": 30.0,
+          "price_adjustment_per_unit_usd": -4.5,
+          "beneficiary": "Buyer (lower invoice price + lower duty)",
+          "threshold_triggered_(>3%)": true,
+          "cap_applied": false
+        }
+      }
+    },
+    {
+      "question": "Identify all HS codes and baseline US duty rates from the Agreement for analytics.",
+      "answer": {
+        "summary": "HS 8538.90 (25%), HS 8542.31 (25%), HS 7616.99 (10%) for Chinese-origin products.",
+        "extracted": [
+          {
+            "sku": "AR-PCB-X1",
+            "hs": "8538.90",
+            "baseline_us_duty": "25%"
+          },
+          {
+            "sku": "AR-IC-M4",
+            "hs": "8542.31",
+            "baseline_us_duty": "25%"
+          },
+          {
+            "sku": "AR-HSG-K7",
+            "hs": "7616.99",
+            "baseline_us_duty": "10%"
+          }
+        ],
+        "policy_citations": [
+          "Schedule A"
+        ]
+      }
+    },
+    {
+      "question": "Does the 3% de minimis threshold in Section 9 block an adjustment if tariffs on HS 7616.99 increase from 10% to 12% with CIF $7.20/unit?",
+      "answer": {
+        "summary": "Yes. The landed-cost delta is 2% (12% \u2212 10%), below the 3% threshold; no adjustment applies.",
+        "calculations": {
+          "tariff_old_rate": 0.1,
+          "tariff_new_rate": 0.12,
+          "delta": 0.02,
+          "threshold_(3%)": 0.03,
+          "threshold_triggered": false
+        },
+        "policy_citations": [
+          "Section 9.2"
+        ]
+      }
+    },
+    {
+      "question": "We already applied 6% worth of tariff adjustments this year on AR-IC-M4. A new increase would imply a further 4% price rise. What cap applies and how much of the new increase is billable under Section 9.3?",
+      "answer": {
+        "summary": "Annual cap is 8% per product family; only 2% additional is billable, 2% is blocked by the cap.",
+        "calculations": {
+          "cap_pct": 0.08,
+          "already_applied": 0.06,
+          "new_requested": 0.04,
+          "allowed_now": 0.02,
+          "blocked": 0.02
+        },
+        "policy_citations": [
+          "Section 9.3"
+        ]
+      }
+    },
+    {
+      "question": "Who is the Importer-of-Record and which documents must accompany each shipment to support customs classification and origin?",
+      "answer": {
+        "summary": "Buyer is Importer-of-Record; Seller provides commercial invoice, packing list and certificate of origin (if available).",
+        "policy_citations": [
+          "Section 7.1-7.2",
+          "Section 8.1"
+        ]
+      }
+    },
+    {
+      "question": "If the parties cannot agree on a tariff adjustment within 30 days after a change in law, what cancellation rights does Buyer have?",
+      "answer": {
+        "summary": "Buyer may cancel undelivered POs for the affected Products without penalty.",
+        "policy_citations": [
+          "Section 9.4"
+        ]
+      }
+    },
+    {
+      "question": "Summarize the net tariff exposure profile of this Agreement by Incoterm and role assignment.",
+      "answer": {
+        "summary": "FOB Shanghai with Buyer as IOR: Buyer bears import duties. Section 9 can shift economic burden via price adjustments (\u00b1) subject to a 3% threshold and 8% cap; Buyer can cancel if no agreement.",
+        "policy_citations": [
+          "Sections 7-9",
+          "Schedule A"
+        ]
+      }
+    }
+  ]
+}

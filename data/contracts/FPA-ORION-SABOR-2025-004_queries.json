@@ -1,0 +1,116 @@
+{
+  "file_name_pdf": "data/contracts/FPA-ORION-SABOR-2025-004_UK_Framework_Procurement_Agreement_Packaged_Foods.pdf",
+  "file_name_queries": "data/contracts/FPA-ORION-SABOR-2025-004_queries.json",
+  "file_name_markdown": "data/contracts/FPA-ORION-SABOR-2025-004_UK_Framework_Procurement_Agreement_Packaged_Foods.md",
+  "metadata": {
+    "title": "UK Framework Procurement Agreement (Packaged Foods)",
+    "incoterms": "DDP Manchester (Incoterms 2020)",
+    "importer_of_record": "Seller (Sabor Europeo)",
+    "tariff_adjustment_policy": "Section 6: Seller may request price increase if new UK tariffs raise landed cost by >5% vs Baseline Duty; Buyer may reject increases >6% in rolling 12 months and cancel; decreases must be passed through.",
+    "baseline_duty_and_hs_reference": "Schedule A lists HS codes and baseline UK duty (0%) for ES-origin foods."
+  },
+  "queries": [
+    {
+      "question": "UK introduces a 7% tariff on HS 1509.10 (olive oil) where Baseline UK Duty is 0%. For a call-off of 40,000 L at a DDP unit price of \u00a35.60, what price increase can Seller request and can Buyer refuse?",
+      "answer": {
+        "summary": "Seller\u2019s landed cost increase is 7% of Customs Value. Section 6.1 permits passing through the incremental duty since >5%. However, Buyer may reject increases exceeding 6% in a rolling 12 months and cancel undelivered orders.",
+        "calculations": {
+          "baseline_duty_pct": 0.0,
+          "new_duty_pct": 0.07,
+          "increase_pct": 0.07,
+          "ddp_unit_price_gbp": 5.6,
+          "indicative_increment_per_unit_gbp": 0.392,
+          "threshold_(>5%)": true,
+          "buyer_reject_if_>6%": true
+        },
+        "who_bears_tariff": "Seller (IOR under DDP) initially; economic pass-through per contract limits.",
+        "policy_citations": [
+          "Section 4.1-4.2",
+          "Section 6.1-6.3",
+          "Schedule A"
+        ]
+      }
+    },
+    {
+      "question": "If tariffs drop from 7% back to 0% on HS 1902.19, what happens to pricing?",
+      "answer": {
+        "summary": "Any decrease must be passed through to Buyer effective on the implementation date.",
+        "policy_citations": [
+          "Section 6.3"
+        ]
+      }
+    },
+    {
+      "question": "List HS codes, origin and Baseline UK Duty for all Products.",
+      "answer": {
+        "summary": "HS 1902.19 (0%), 2103.20 (0%), 1509.10 (0%), origin ES; Incoterm DDP; IOR Seller.",
+        "extracted": [
+          {
+            "sku": "SE-PASTA-500",
+            "hs": "1902.19",
+            "baseline_uk_duty": "0%"
+          },
+          {
+            "sku": "SE-SAUCE-TOM",
+            "hs": "2103.20",
+            "baseline_uk_duty": "0%"
+          },
+          {
+            "sku": "SE-OLIVE-EVOO",
+            "hs": "1509.10",
+            "baseline_uk_duty": "0%"
+          }
+        ],
+        "policy_citations": [
+          "Schedule A"
+        ]
+      }
+    },
+    {
+      "question": "Who is Importer-of-Record and what are the implications for tariff exposure?",
+      "answer": {
+        "summary": "Seller is IOR under DDP; Seller pays duties and handles customs. Economic exposure can be passed through only if landed cost increases >5%, and Buyer can cap effective increases at 6% with cancellation option.",
+        "policy_citations": [
+          "Section 4",
+          "Section 6"
+        ]
+      }
+    },
+    {
+      "question": "Assume the UK imposes 4% on HS 2103.20 and 3% on HS 1902.19. Can Seller increase prices under Section 6.1?",
+      "answer": {
+        "summary": "No. The landed cost increases (3-4%) are below the >5% threshold; no price increase right under Section 6.1.",
+        "policy_citations": [
+          "Section 6.1"
+        ]
+      }
+    },
+    {
+      "question": "If Seller proposes an 8% price increase due to tariffs across the portfolio within 12 months, what recourse does Buyer have?",
+      "answer": {
+        "summary": "Buyer may reject increases exceeding 6% in a rolling 12-month period and cancel undelivered orders for affected Products.",
+        "policy_citations": [
+          "Section 6.2"
+        ]
+      }
+    },
+    {
+      "question": "Explain how rules of origin affect duty liability under this Agreement.",
+      "answer": {
+        "summary": "Seller must maintain origin documentation to qualify for preferential duty under the EU-UK TCA; if origin changes and duty applies, Seller remains responsible for resulting duties.",
+        "policy_citations": [
+          "Section 5.1-5.2"
+        ]
+      }
+    },
+    {
+      "question": "Summarize tariff exposure profile of this Framework.",
+      "answer": {
+        "summary": "DDP/IOR Seller: Seller bears tariff and VAT liability, with limited pass-through if >5%. Buyer can cap increases at 6% and cancel; decreases must be passed through.",
+        "policy_citations": [
+          "Sections 4-6"
+        ]
+      }
+    }
+  ]
+}

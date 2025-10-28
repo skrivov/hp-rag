@@ -1,0 +1,125 @@
+{
+  "file_name_pdf": "data/contracts/EPA-VAC-OCT-2025-005_Equipment_Purchase_Agreement_Industrial_Sewing_Lines.pdf",
+  "file_name_queries": "data/contracts/EPA-VAC-OCT-2025-005_queries.json",
+  "file_name_markdown": "data/contracts/EPA-VAC-OCT-2025-005_Equipment_Purchase_Agreement_Industrial_Sewing_Lines.md",
+  "metadata": {
+    "title": "Equipment Purchase Agreement (Industrial Sewing Lines)",
+    "incoterms": "DDP Buyer\u2019s facility, New York (Incoterms 2020)",
+    "importer_of_record": "Seller (ItalMech)",
+    "tariff_adjustment_policy": "Section 6: Seller may pass through incremental US tariffs on EU-origin equipment; annual pass-through cap 5% of total contract; evidence required. Section 5: Seller pays duties as IOR.",
+    "baseline_duty_and_hs_reference": "Schedule A includes HS 8452.10 and 8537.10 with baseline US duty ~2.5-2.7%."
+  },
+  "queries": [
+    {
+      "question": "The US adds a 10% tariff on EU-origin sewing machines (HS 8452.10) and a 5% surcharge on control cabinets (HS 8537.10). Compute the maximum pass-through Seller can invoice this year if the total contract price is $478,000 and neither line has shipped.",
+      "answer": {
+        "summary": "Pass-through equals incremental duty on Customs Value but is capped at 5% of total contract price per Section 6.2. With a $478,000 contract, the cap is $23,900. Seller cannot pass through more than $23,900 this year even if calculated incremental duties exceed that amount.",
+        "calculations": {
+          "contract_price_usd": 478000,
+          "annual_cap_pct": 0.05,
+          "annual_cap_usd": 23900,
+          "note": "Exact incremental duty requires Customs Values per line; cap governs the maximum invoiceable amount."
+        },
+        "who_bears_tariff": "Seller pays at import as IOR, then may pass through incrementally within cap.",
+        "policy_citations": [
+          "Section 5.1",
+          "Section 6.1-6.2",
+          "Schedule A"
+        ]
+      }
+    },
+    {
+      "question": "If baseline duty on HS 8452.10 is 2.5% and a new 8% tariff is introduced (total 10.5%), compute the incremental pass-through on Line-A if the Customs Value equals the line price ($420,000).",
+      "answer": {
+        "summary": "Incremental rate = 8%. Pass-through = 8% \u00d7 $420,000 = $33,600, subject to the 5% annual cap across the contract.",
+        "calculations": {
+          "baseline_duty_pct": 0.025,
+          "new_additional_tariff_pct": 0.08,
+          "incremental_rate_pct": 0.08,
+          "customs_value_usd": 420000,
+          "pass_through_usd": 33600.0
+        },
+        "policy_citations": [
+          "Section 6.1-6.2",
+          "Schedule A"
+        ]
+      }
+    },
+    {
+      "question": "What evidence must Seller provide to support any pass-through invoice?",
+      "answer": {
+        "summary": "Documentary evidence such as entry summaries supporting the claimed incremental duty.",
+        "policy_citations": [
+          "Section 6.3"
+        ]
+      }
+    },
+    {
+      "question": "Identify HS codes and baseline US duty rates from Schedule A.",
+      "answer": {
+        "summary": "HS 8452.10 (2.5%), HS 8537.10 (2.7%), origin IT.",
+        "extracted": [
+          {
+            "line": "Line-A",
+            "hs": "8452.10",
+            "baseline_us_duty": "2.5%"
+          },
+          {
+            "line": "Line-B",
+            "hs": "8537.10",
+            "baseline_us_duty": "2.7%"
+          }
+        ],
+        "policy_citations": [
+          "Schedule A"
+        ]
+      }
+    },
+    {
+      "question": "Who is Importer-of-Record and what Incoterm is used? Summarize the exposure.",
+      "answer": {
+        "summary": "Seller is IOR under DDP New York; Seller pays duties and tariffs, then may pass through incremental tariffs within a 5% annual cap.",
+        "policy_citations": [
+          "Section 4.1",
+          "Section 5.1",
+          "Section 6.2"
+        ]
+      }
+    },
+    {
+      "question": "If only Line-B ships this year at $58,000 customs value and a 5% tariff applies, can Seller pass through the full $2,900 even though the cap is $23,900?",
+      "answer": {
+        "summary": "Yes. The cap is an upper bound; a $2,900 pass-through is below the $23,900 annual cap.",
+        "calculations": {
+          "customs_value_usd": 58000,
+          "tariff_delta_pct": 0.05,
+          "pass_through_usd": 2900.0,
+          "annual_cap_usd": 23900,
+          "within_cap": true
+        },
+        "policy_citations": [
+          "Section 6.2"
+        ]
+      }
+    },
+    {
+      "question": "If the United States rescinds the 10% tariff mid-year after Seller invoiced a pass-through for Line-A, does the Agreement require rebates?",
+      "answer": {
+        "summary": "No explicit rebate obligation is stated; Section 6 provides for pass-through of incremental duties with evidence, but does not specify claw-backs upon tariff decreases. Parties may agree commercially.",
+        "policy_citations": [
+          "Section 6"
+        ]
+      }
+    },
+    {
+      "question": "Summarize tariff exposure profile of the Agreement.",
+      "answer": {
+        "summary": "DDP/IOR Seller with pass-through right for incremental US tariffs on EU-origin equipment, capped at 5% of total contract per year; evidence required.",
+        "policy_citations": [
+          "Sections 4-6",
+          "Schedule A"
+        ]
+      }
+    }
+  ]
+}

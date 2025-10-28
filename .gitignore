@@ -13,5 +13,4 @@ wheels/
 # Project artifacts
 artifacts/
 .uv_cache/
-data
 .env

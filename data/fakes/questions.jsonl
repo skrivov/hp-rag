@@ -1,0 +1,3 @@
+{"query": "How does HP-RAG select links?", "expected_answer": "LLM-based link filtering using the TOC", "reference_contexts": ["The system performs LLM-based link filtering by default."]}
+{"query": "What is TOC indexing in HP-RAG?", "expected_answer": "TOC indexing builds hierarchical paths from headings", "reference_contexts": ["TOC indexing analyzes headings"]}
+{"query": "What should I do if no LLM is configured?", "expected_answer": "Enable FTS fallback", "reference_contexts": ["If no LLM is configured, enable FTS fallback"]}

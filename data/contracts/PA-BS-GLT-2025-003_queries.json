@@ -1,0 +1,131 @@
+{
+  "file_name_pdf": "data/contracts/PA-BS-GLT-2025-003_Purchase_Agreement_Solar_Glass_CIF_India.pdf",
+  "file_name_queries": "data/contracts/PA-BS-GLT-2025-003_queries.json",
+  "file_name_markdown": "data/contracts/PA-BS-GLT-2025-003_Purchase_Agreement_Solar_Glass_CIF_India.md",
+  "metadata": {
+    "title": "Purchase Agreement (Solar Glass) - CIF India",
+    "incoterms": "CIF Nhava Sheva (Incoterms 2020)",
+    "importer_of_record": "Buyer (Bright Solar)",
+    "tariff_adjustment_policy": "Section 6: Buyer bears anti-dumping/safeguard duties; repricing/cancellation if composite duty increases >12% above Baseline Composite Duty in Schedule A.",
+    "baseline_duty_and_hs_reference": "Schedule A contains HS 7007.19 items with baseline composite duty 10-12%."
+  },
+  "queries": [
+    {
+      "question": "India imposes an anti-dumping duty of 15% on HS 7007.19, raising composite duty from the 10% Baseline Composite Duty to 25%. For an undelivered order of 20,000 m\u00b2 of GLT-SG-3.2 at CIF $8.10/m\u00b2, compute Buyer\u2019s incremental duty and whether repricing/cancellation rights apply.",
+      "answer": {
+        "summary": "Incremental duty = 15% \u00d7 $8.10 \u00d7 20,000 = $24,300. The composite increase (>12% over baseline) triggers Section 6.2; Buyer may request repricing or cancel open POs for the affected Products with 15 days\u2019 notice.",
+        "calculations": {
+          "baseline_composite_duty": 0.1,
+          "new_composite_duty": 0.25,
+          "increase_vs_baseline": 0.15,
+          "cif_per_m2_usd": 8.1,
+          "qty_m2": 20000,
+          "incremental_duty_usd": 24299.999999999996
+        },
+        "who_bears_tariff": "Buyer (IOR)",
+        "policy_citations": [
+          "Section 5.1",
+          "Section 6.1-6.3",
+          "Schedule A"
+        ]
+      }
+    },
+    {
+      "question": "If composite duty increases from 12% to 20% for GLT-ARC-3.2, does the trigger fire and what are the options?",
+      "answer": {
+        "summary": "Increase vs Baseline Composite Duty (12%) is +8%. Trigger requires >12% increase, so it does NOT fire; no contract repricing/cancellation right under Section 6.2.",
+        "calculations": {
+          "baseline": 0.12,
+          "new": 0.2,
+          "delta": 0.08,
+          "trigger_(>12%)": false
+        },
+        "policy_citations": [
+          "Section 6.2"
+        ]
+      }
+    },
+    {
+      "question": "Who is Importer-of-Record and what Incoterm allocates risk transfer in this Agreement?",
+      "answer": {
+        "summary": "Buyer is Importer-of-Record and pays Indian duties; CIF Nhava Sheva: risk transfers to Buyer upon discharge at port.",
+        "policy_citations": [
+          "Section 4.1-4.2",
+          "Section 5.1"
+        ]
+      }
+    },
+    {
+      "question": "Provide HS code mapping and Baseline Composite Duty for analytics.",
+      "answer": {
+        "summary": "All items are HS 7007.19, PRC origin; Baseline Composite Duty is 10% for GLT-SG-3.2 and 4.0, 12% for GLT-ARC-3.2.",
+        "extracted": [
+          {
+            "sku": "GLT-SG-3.2",
+            "hs": "7007.19",
+            "baseline_composite_duty": "10%"
+          },
+          {
+            "sku": "GLT-SG-4.0",
+            "hs": "7007.19",
+            "baseline_composite_duty": "10%"
+          },
+          {
+            "sku": "GLT-ARC-3.2",
+            "hs": "7007.19",
+            "baseline_composite_duty": "12%"
+          }
+        ],
+        "policy_citations": [
+          "Schedule A"
+        ]
+      }
+    },
+    {
+      "question": "If anti-dumping adds +14% on GLT-SG-4.0, compute incremental duty for 12,500 m\u00b2 at CIF $9.20/m\u00b2 and state whether the trigger is met.",
+      "answer": {
+        "summary": "Incremental duty = 14% \u00d7 $9.20 \u00d7 12,500 = $16,100. Trigger vs 10% Baseline is +14% (>12%), so repricing/cancellation rights apply.",
+        "calculations": {
+          "increase_pct": 0.14,
+          "cif_usd_per_m2": 9.2,
+          "qty_m2": 12500,
+          "incremental_duty_usd": 16100.0,
+          "trigger_met": true
+        },
+        "policy_citations": [
+          "Section 6.2",
+          "Schedule A"
+        ]
+      }
+    },
+    {
+      "question": "Can Buyer refuse to pay anti-dumping duty under this Agreement?",
+      "answer": {
+        "summary": "No. Section 5.1 places responsibility for Basic Customs Duty, safeguard/anti-dumping duty and IGST on Buyer as IOR.",
+        "policy_citations": [
+          "Section 5.1",
+          "Section 6.1"
+        ]
+      }
+    },
+    {
+      "question": "If Buyer requests repricing, what is the adjustment formula?",
+      "answer": {
+        "summary": "Adjustment equals the incremental duty multiplied by the applicable Customs Value for undelivered quantities.",
+        "policy_citations": [
+          "Section 6.3"
+        ]
+      }
+    },
+    {
+      "question": "Summarize tariff exposure profile for this Agreement.",
+      "answer": {
+        "summary": "CIF India with Buyer as IOR: Buyer bears import duties and anti-dumping. Economic relief is available only when composite duty increases by >12% vs Baseline; Buyer may request repricing or cancel open POs.",
+        "policy_citations": [
+          "Sections 4-6",
+          "Schedule A"
+        ]
+      }
+    }
+  ]
+}

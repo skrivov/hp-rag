@@ -1,0 +1,126 @@
+{
+  "file_name_pdf": "data/contracts/GDA-NMD-EMD-2025-002_EMEA_Distribution_Agreement_Medical_Devices.pdf",
+  "file_name_queries": "data/contracts/GDA-NMD-EMD-2025-002_queries.json",
+  "file_name_markdown": "data/contracts/GDA-NMD-EMD-2025-002_EMEA_Distribution_Agreement_Medical_Devices.md",
+  "metadata": {
+    "title": "EMEA Distribution Agreement (Medical Devices)",
+    "incoterms": "EXW Boston (Incoterms 2020)",
+    "importer_of_record": "Distributor (EuroMed)",
+    "tariff_adjustment_policy": "Section 7: repricing if composite duty increase \u22658% for 3 consecutive months; else forecast reduction up to 30% or termination of line; Section 6: Distributor bears duties, tariffs and VAT.",
+    "baseline_duty_and_hs_reference": "Schedule A lists HS codes and baseline EU duty rates for US-origin products."
+  },
+  "queries": [
+    {
+      "question": "EU imposes a retaliatory tariff that raises the composite duty on HS 9026.20 by +9% for three consecutive months. What remedies are available and who bears the duty?",
+      "answer": {
+        "summary": "Distributor bears the duty as IOR. After \u22658% composite increase for 3 months, either party may request repricing; failing agreement in 30 days, Distributor may cut its 12-month forecast by up to 30% or Supplier may terminate the affected line.",
+        "policy_citations": [
+          "Section 6.1",
+          "Section 7.1-7.2"
+        ],
+        "who_bears_tariff": "Distributor (EuroMed)",
+        "rights": {
+          "repricing": true,
+          "forecast_reduction_up_to": 0.3,
+          "termination_of_line": true
+        }
+      }
+    },
+    {
+      "question": "If composite duty rises by 6% for two months and then reverts, does the repricing trigger?",
+      "answer": {
+        "summary": "No. The trigger requires \u22658% increase sustained for three consecutive months.",
+        "policy_citations": [
+          "Section 7.1"
+        ]
+      }
+    },
+    {
+      "question": "Calculate landed-cost impact if baseline EU duty on HS 8544.42 is 3.5% and a temporary safeguard adds +5% for three months. Distributor imports \u20ac200,000 of NMD-CABLE-EU per month. State exposure and available actions.",
+      "answer": {
+        "summary": "Composite increase = 5%. Monthly incremental duty \u2248 \u20ac10,000 (5% \u00d7 200,000). Trigger not met (needs \u22658% \u00d7 3 months); no repricing right, but normal purchasing discretion applies.",
+        "calculations": {
+          "baseline_duty_pct": 0.035,
+          "additional_safeguard_pct": 0.05,
+          "composite_increase_pct": 0.05,
+          "monthly_import_value_eur": 200000,
+          "incremental_duty_eur": 10000,
+          "trigger_met_(>=8%_for_3m)": false
+        },
+        "policy_citations": [
+          "Section 6.1",
+          "Section 7.1"
+        ]
+      }
+    },
+    {
+      "question": "List the HS codes and baseline EU duty rates for all Products.",
+      "answer": {
+        "summary": "HS 9018.90 (0%), 9026.20 (2.2%), 8544.42 (3.5%), origin US.",
+        "extracted": [
+          {
+            "code": "NMD-KIT-100",
+            "hs": "9018.90",
+            "baseline_eu_duty": "0%"
+          },
+          {
+            "code": "NMD-SENS-45",
+            "hs": "9026.20",
+            "baseline_eu_duty": "2.2%"
+          },
+          {
+            "code": "NMD-CABLE-EU",
+            "hs": "8544.42",
+            "baseline_eu_duty": "3.5%"
+          }
+        ],
+        "policy_citations": [
+          "Schedule A"
+        ]
+      }
+    },
+    {
+      "question": "Who is Importer-of-Record and what Incoterm allocates export/import formalities?",
+      "answer": {
+        "summary": "Distributor is IOR; EXW Boston places export and import formalities and risk on Distributor after pickup.",
+        "policy_citations": [
+          "Section 5.1-5.2",
+          "Section 6.1"
+        ]
+      }
+    },
+    {
+      "question": "If repricing is requested and no agreement is reached in 30 days, can Supplier unilaterally change prices?",
+      "answer": {
+        "summary": "No unilateral price change is stated; instead, Distributor may reduce forecast up to 30% or Supplier may terminate the affected Product line with 60 days\u2019 notice.",
+        "policy_citations": [
+          "Section 7.2"
+        ]
+      }
+    },
+    {
+      "question": "Assume \u20ac1.2M monthly imports of NMD-SENS-45; composite duty increases by 9% for three months. Estimate total incremental duty and outline remedies.",
+      "answer": {
+        "summary": "Incremental duty ~ \u20ac108,000 per month (9% \u00d7 1.2M), total \u20ac324,000 over 3 months. Remedies: request repricing; if no agreement, Distributor may cut forecast by 30% or Supplier may terminate the line.",
+        "calculations": {
+          "monthly_import_value_eur": 1200000,
+          "increase_pct": 0.09,
+          "monthly_increment_eur": 108000,
+          "three_months_total_eur": 324000
+        },
+        "policy_citations": [
+          "Section 7.1-7.2"
+        ]
+      }
+    },
+    {
+      "question": "Summarize tariff exposure profile under this Agreement.",
+      "answer": {
+        "summary": "EXW/IOR Distributor: Distributor bears tariffs and VAT. Economic relief via repricing only if composite duty rises \u22658% for 3 months; otherwise demand/flexibility tools (forecast reduction or termination) manage exposure.",
+        "policy_citations": [
+          "Sections 5-7"
+        ]
+      }
+    }
+  ]
+}
