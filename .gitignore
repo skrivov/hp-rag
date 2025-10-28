@@ -13,4 +13,8 @@ wheels/
 # Project artifacts
 artifacts/
 .uv_cache/
+.uv-cache/
+.python-version
+.pytest_cache/
+.ruff_cache/
 .env
