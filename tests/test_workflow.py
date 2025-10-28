@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
+from src.eval.metrics import MetricDefinition
 from src.orchestration.datasets import DatasetSpec, register_dataset, unregister_dataset
 from src.orchestration.workflow import BenchmarkWorkflow
 
@@ -11,6 +12,16 @@ from src.orchestration.workflow import BenchmarkWorkflow
 class StaticSelectorLLM:
     def complete(self, prompt: str):  # pragma: no cover - trivial wrapper
         return SimpleNamespace(text='["doc1/passage-1"]')
+
+
+class WorkflowEmbeddingProvider:
+    def embed(self, text: str):
+        return [float(len(text)), 1.0]
+
+
+class WorkflowLLMScorer:
+    def measure(self, test_case, *args, **kwargs):
+        return 1.0 if test_case.expected_output == test_case.actual_output else 0.0
 
 
 def test_workflow_full_cycle(tmp_path: Path) -> None:
@@ -60,12 +71,25 @@ def test_workflow_full_cycle(tmp_path: Path) -> None:
             include_vector=False,
             selector_llm=StaticSelectorLLM(),
             top_k=1,
+            metrics=[
+                MetricDefinition("answer_token_f1", {"threshold": 0.5}),
+                MetricDefinition(
+                    "answer_embedding_similarity",
+                    {"threshold": 0.5, "provider": WorkflowEmbeddingProvider()},
+                ),
+                MetricDefinition(
+                    "answer_llm_correctness",
+                    {"threshold": 0.5, "scorer_factory": WorkflowLLMScorer},
+                ),
+                MetricDefinition("context_precision", {"threshold": 0.5}),
+                MetricDefinition("context_recall", {"threshold": 0.5}),
+                MetricDefinition("context_f1", {"threshold": 0.5}),
+            ],
         )
-        assert "hyperlink/answer_correctness" in metrics
+        assert "hyperlink/answer_token_f1" in metrics
 
         workflow.remove_dataset(spec.name, remove_artifacts=True)
         assert not workflow.dataset_dir(spec.name).exists()
         assert not workflow.artifacts_dir(spec.name).exists()
     finally:
         unregister_dataset(spec.name)
-

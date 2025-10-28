@@ -17,6 +17,8 @@ from src.ingest import (
     MarkdownTOCBuilder,
     MarkdownTOCBuilderConfig,
     ParagraphChunker,
+    PyMuPDFTOCBuilder,
+    PyMuPDFTOCBuilderConfig,
 )
 from src.ingest.adapters.factory import adapter_choices, create_adapter
 from src.orchestration.config_loader import (
@@ -349,6 +351,9 @@ def main() -> None:
             sqlite_store=sqlite_store,
             vector_store=faiss_store,
         )
+        sections_written = 0
+        chunks_written = 0
+
         if args.dataset:
             adapter_kwargs: Dict[str, object] = dict(getattr(args, "_adapter_kwargs", {}))
             if args.dataset == "miracl":
@@ -359,23 +364,51 @@ def main() -> None:
                 if args.miracl_language:
                     adapter_kwargs["language"] = args.miracl_language
             adapter = create_adapter(args.dataset, args.corpus, **adapter_kwargs)
-            res = pipeline.ingest_sections(adapter.iter_section_roots())
-            documents_processed = res.documents_processed
+            ingestion_result = pipeline.ingest_sections(adapter.iter_section_roots())
+            documents_processed = ingestion_result.documents_processed
+            sections_written = ingestion_result.sections_written
+            chunks_written = ingestion_result.chunks_written
         else:
-            docs = sorted([p for p in args.corpus.glob(args.pattern) if p.is_file()])
-            if not docs:
+            documents_processed = 0
+
+            pdf_docs: List[Path] = []
+            markdown_docs: List[Path] = []
+
+            if args.corpus.is_file():
+                if args.corpus.suffix.lower() == ".pdf":
+                    pdf_docs = [args.corpus]
+                else:
+                    markdown_docs = [args.corpus]
+            else:
+                pdf_docs = sorted([p for p in args.corpus.glob("**/*.pdf") if p.is_file()])
+                markdown_docs = sorted([p for p in args.corpus.glob(args.pattern) if p.is_file()])
+
+            if pdf_docs:
+                pdf_builder = PyMuPDFTOCBuilder(PyMuPDFTOCBuilderConfig())
+                pdf_roots = [pdf_builder.build(path) for path in pdf_docs]
+                pdf_result = pipeline.ingest_sections(pdf_roots)
+                documents_processed += pdf_result.documents_processed
+                sections_written += pdf_result.sections_written
+                chunks_written += pdf_result.chunks_written
+
+            if markdown_docs:
+                pipeline.toc_builder = MarkdownTOCBuilder(MarkdownTOCBuilderConfig())
+                md_result = pipeline.ingest(markdown_docs)
+                documents_processed += md_result.documents_processed
+                sections_written += md_result.sections_written
+                        chunks_written += md_result.chunks_written
+
+            if not pdf_docs and not markdown_docs:
                 raise FileNotFoundError(
-                    f"No documents found in {args.corpus} matching {args.pattern}"
+                    f"No documents found in {args.corpus} matching {args.pattern} or containing PDFs"
                 )
-            pipeline.toc_builder = MarkdownTOCBuilder(MarkdownTOCBuilderConfig())
-            res = pipeline.ingest(docs)
-            documents_processed = len(docs)
+
         print(
             "Rebuilt stores",
             {
                 "documents": documents_processed,
-                "sections": res.sections_written,
-                "chunks": res.chunks_written,
+                "sections": sections_written,
+                "chunks": chunks_written,
                 "sqlite_db": str(args.sqlite_db),
                 "faiss_dir": str(args.faiss_dir) if faiss_store else None,
             },
@@ -437,7 +470,9 @@ def main() -> None:
             "avg_contexts",
             "avg_tokens",
             "avg_latency_ms",
-            "answer_correctness",
+            "answer_token_f1",
+            "answer_embedding_similarity",
+            "answer_llm_correctness",
             "context_precision",
             "context_recall",
             "context_f1",

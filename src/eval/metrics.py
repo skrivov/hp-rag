@@ -6,17 +6,17 @@ from typing import Any, Dict, Iterable, List, Sequence, Type
 from deepeval.metrics.base_metric import BaseMetric
 from deepeval.test_case import LLMTestCase
 
-
-def _normalize(text: str) -> str:
-    return " ".join(text.lower().strip().split())
-
-
-def _token_set(text: str) -> set[str]:
-    return {token for token in _normalize(text).split(" ") if token}
+from src.eval.answer_similarity import (
+    AnswerSimilarityStrategy,
+    EmbeddingCosineStrategy,
+    LLMJudgementStrategy,
+    TokenF1Strategy,
+    normalize_text,
+)
 
 
 def _normalize_contexts(items: Iterable[str | None]) -> List[str]:
-    return [_normalize(item) for item in items if item]
+    return [normalize_text(item) for item in items if item]
 
 
 def _matches(candidate: str, references: Iterable[str]) -> bool:
@@ -42,42 +42,28 @@ def _precision_recall(
     return precision, recall, matches_precision, len(retrieved_list)
 
 
-class AnswerCorrectnessMetric(BaseMetric):
-    """Lightweight lexical F1 score between expected and actual answers."""
+class AnswerSimilarityMetric(BaseMetric):
+    """Shared implementation for answer similarity metrics."""
 
     async_mode = False
     include_reason = False
     verbose_mode = False
 
-    def __init__(self, threshold: float = 0.5) -> None:
+    def __init__(
+        self,
+        strategy: AnswerSimilarityStrategy,
+        *,
+        threshold: float = 0.5,
+        name: str,
+    ) -> None:
+        self.strategy = strategy
         self.threshold = threshold
+        self._name = name
 
     def measure(self, test_case: LLMTestCase, *args, **kwargs) -> float:
-        actual_tokens = _token_set(test_case.actual_output or "")
-        expected_tokens = _token_set(test_case.expected_output or "")
-
-        if not expected_tokens:
-            self.score = 0.0
-            self.reason = "No expected answer provided."
-            return self.score
-
-        if not actual_tokens:
-            self.score = 0.0
-            self.reason = "Model produced an empty answer."
-            return self.score
-
-        overlap = actual_tokens & expected_tokens
-        precision = len(overlap) / len(actual_tokens)
-        recall = len(overlap) / len(expected_tokens)
-        if precision + recall == 0:
-            self.score = 0.0
-        else:
-            self.score = 2 * precision * recall / (precision + recall)
-
-        self.reason = (
-            f"precision={precision:.2f}, recall={recall:.2f}, "
-            f"overlap_tokens={len(overlap)}"
-        )
+        score = self.strategy.compute(test_case.expected_output or "", test_case.actual_output or "")
+        self.score = max(0.0, min(float(score), 1.0))
+        self.reason = f"score={self.score:.2f} via {self._name}"
         return self.score
 
     async def a_measure(self, test_case: LLMTestCase, *args, **kwargs) -> float:
@@ -90,7 +76,51 @@ class AnswerCorrectnessMetric(BaseMetric):
 
     @property
     def __name__(self) -> str:  # type: ignore[override]
-        return "Answer Correctness"
+        return self._name
+
+
+class AnswerTokenF1Metric(AnswerSimilarityMetric):
+    """Token-set F1 similarity."""
+
+    def __init__(self, threshold: float = 0.5) -> None:
+        super().__init__(TokenF1Strategy(), threshold=threshold, name="Answer Token F1")
+
+
+class EmbeddingSimilarityMetric(AnswerSimilarityMetric):
+    """Cosine-similarity metric over embeddings."""
+
+    def __init__(
+        self,
+        *,
+        threshold: float = 0.5,
+        model: str | None = None,
+        provider: Any | None = None,
+        embedder: Any | None = None,
+    ) -> None:
+        strategy = EmbeddingCosineStrategy(provider=provider, model=model, embedder=embedder)
+        super().__init__(strategy, threshold=threshold, name="Answer Embedding Similarity")
+
+
+class AnswerLLMCorrectnessMetric(AnswerSimilarityMetric):
+    """LLM-judged correctness metric backed by DeepEval."""
+
+    def __init__(
+        self,
+        *,
+        threshold: float = 0.5,
+        model: str | None = None,
+        scorer: Any | None = None,
+        scorer_factory: Any | None = None,
+        **metric_kwargs: Any,
+    ) -> None:
+        strategy = LLMJudgementStrategy(
+            model=model,
+            threshold=threshold,
+            scorer=scorer,
+            scorer_factory=scorer_factory,
+            **metric_kwargs,
+        )
+        super().__init__(strategy, threshold=threshold, name="Answer LLM Correctness")
 
 
 class ContextPrecisionMetric(BaseMetric):
@@ -219,7 +249,9 @@ class MetricDefinition:
 
 
 DEFAULT_METRICS = [
-    MetricDefinition(name="answer_correctness", kwargs={"threshold": 0.5}),
+    MetricDefinition(name="answer_token_f1", kwargs={"threshold": 0.5}),
+    MetricDefinition(name="answer_embedding_similarity", kwargs={"threshold": 0.5}),
+    MetricDefinition(name="answer_llm_correctness", kwargs={"threshold": 0.5}),
     MetricDefinition(name="context_precision", kwargs={"threshold": 0.5}),
     MetricDefinition(name="context_recall", kwargs={"threshold": 0.5}),
     MetricDefinition(name="context_f1", kwargs={"threshold": 0.5}),
@@ -227,7 +259,9 @@ DEFAULT_METRICS = [
 
 
 _METRIC_REGISTRY: Dict[str, Type[BaseMetric]] = {
-    "answer_correctness": AnswerCorrectnessMetric,
+    "answer_token_f1": AnswerTokenF1Metric,
+    "answer_embedding_similarity": EmbeddingSimilarityMetric,
+    "answer_llm_correctness": AnswerLLMCorrectnessMetric,
     "context_precision": ContextPrecisionMetric,
     "context_recall": ContextRecallMetric,
     "context_f1": ContextF1Metric,
@@ -247,7 +281,9 @@ def instantiate_metrics(definitions: Sequence[MetricDefinition]) -> List[BaseMet
 
 
 __all__ = [
-    "AnswerCorrectnessMetric",
+    "AnswerTokenF1Metric",
+    "EmbeddingSimilarityMetric",
+    "AnswerLLMCorrectnessMetric",
     "ContextPrecisionMetric",
     "ContextRecallMetric",
     "ContextF1Metric",

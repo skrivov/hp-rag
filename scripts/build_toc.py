@@ -12,6 +12,8 @@ from src.ingest import (
     MarkdownTOCBuilder,
     MarkdownTOCBuilderConfig,
     ParagraphChunker,
+    PyMuPDFTOCBuilder,
+    PyMuPDFTOCBuilderConfig,
 )
 from src.ingest.adapters.factory import adapter_choices, create_adapter
 from src.hp_rag.storage import SQLiteHyperlinkConfig, SQLiteHyperlinkStore
@@ -85,6 +87,9 @@ def main() -> None:
         vector_store=vector_store,
     )
 
+    sections_written = 0
+    chunks_written = 0
+
     if args.dataset:
         adapter_kwargs: dict[str, object] = {}
         if args.dataset == "miracl":
@@ -97,21 +102,48 @@ def main() -> None:
         adapter = create_adapter(args.dataset, args.corpus, **adapter_kwargs)
         result = pipeline.ingest_sections(adapter.iter_section_roots())
         documents_processed = result.documents_processed
+        sections_written = result.sections_written
+        chunks_written = result.chunks_written
     else:
-        toc_builder = MarkdownTOCBuilder(MarkdownTOCBuilderConfig())
-        pipeline.toc_builder = toc_builder
-        docs = discover_documents(args.corpus, args.pattern)
-        if not docs:
+        documents_processed = 0
+
+        pdf_docs: List[Path] = []
+        markdown_docs: List[Path] = []
+
+        if args.corpus.is_file():
+            if args.corpus.suffix.lower() == ".pdf":
+                pdf_docs = [args.corpus]
+            else:
+                markdown_docs = [args.corpus]
+        else:
+            pdf_docs = discover_documents(args.corpus, "**/*.pdf")
+            markdown_docs = discover_documents(args.corpus, args.pattern)
+
+        if pdf_docs:
+            pdf_builder = PyMuPDFTOCBuilder(PyMuPDFTOCBuilderConfig())
+            pdf_roots = [pdf_builder.build(path) for path in pdf_docs]
+            pdf_result = pipeline.ingest_sections(pdf_roots)
+            documents_processed += pdf_result.documents_processed
+            sections_written += pdf_result.sections_written
+            chunks_written += pdf_result.chunks_written
+
+        if markdown_docs:
+            toc_builder = MarkdownTOCBuilder(MarkdownTOCBuilderConfig())
+            pipeline.toc_builder = toc_builder
+            md_result = pipeline.ingest(markdown_docs)
+            documents_processed += md_result.documents_processed
+            sections_written += md_result.sections_written
+            chunks_written += md_result.chunks_written
+
+        if not pdf_docs and not markdown_docs:
             raise RuntimeError("No documents found for ingestion")
-        result = pipeline.ingest(docs)
-        documents_processed = len(docs)
 
     print(
         "Ingestion complete",
         {
             "documents": documents_processed,
-            "sections": result.sections_written,
-            "chunks": result.chunks_written,
+            "sections": sections_written,
+            "chunks": chunks_written,
             "sqlite_db": str(sqlite_path),
             "faiss_dir": str(faiss_dir) if vector_store else None,
         },

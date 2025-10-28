@@ -2,14 +2,22 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from dotenv import load_dotenv
 
 from src.hp_rag.retriever import HyperlinkRetriever, HyperlinkRetrieverConfig
 from src.hp_rag.storage import SQLiteHyperlinkConfig, SQLiteHyperlinkStore
-from src.ingest import IngestionPipeline, MarkdownTOCBuilder, MarkdownTOCBuilderConfig, ParagraphChunker
+from src.ingest import (
+    IngestionPipeline,
+    MarkdownTOCBuilder,
+    MarkdownTOCBuilderConfig,
+    ParagraphChunker,
+    PyMuPDFTOCBuilder,
+    PyMuPDFTOCBuilderConfig,
+)
 from src.ingest.adapters.factory import create_adapter
+from src.eval.metrics import MetricDefinition
 from src.orchestration.datasets import DatasetSpec, available_datasets, download_dataset, get_dataset_spec
 from src.rag.retriever import VectorRetriever, VectorRetrieverConfig
 from src.rag.storage import FaissVectorConfig, FaissVectorStore
@@ -109,10 +117,45 @@ class BenchmarkWorkflow:
             adapter = create_adapter(spec.adapter_name, corpus_path, **spec.adapter_kwargs)
             result = pipeline.ingest_sections(adapter.iter_section_roots())
         else:
-            toc_builder = MarkdownTOCBuilder(MarkdownTOCBuilderConfig())
-            pipeline.toc_builder = toc_builder
-            docs = list(corpus_path.glob("**/*.md")) if corpus_path.is_dir() else [corpus_path]
-            result = pipeline.ingest(docs)
+            total_documents = 0
+            sections_written = 0
+            chunks_written = 0
+
+            pdf_paths: list[Path] = []
+            markdown_paths: list[Path] = []
+
+            if corpus_path.is_file():
+                if corpus_path.suffix.lower() == ".pdf":
+                    pdf_paths = [corpus_path]
+                else:
+                    markdown_paths = [corpus_path]
+            else:
+                pdf_paths = sorted(corpus_path.glob("**/*.pdf"))
+                markdown_paths = sorted(corpus_path.glob("**/*.md"))
+
+            if pdf_paths:
+                pdf_builder = PyMuPDFTOCBuilder(PyMuPDFTOCBuilderConfig())
+                pdf_roots = [pdf_builder.build(path) for path in pdf_paths]
+                pdf_result = pipeline.ingest_sections(pdf_roots)
+                total_documents += pdf_result.documents_processed
+                sections_written += pdf_result.sections_written
+                chunks_written += pdf_result.chunks_written
+
+            if markdown_paths:
+                pipeline.toc_builder = MarkdownTOCBuilder(MarkdownTOCBuilderConfig())
+                md_result = pipeline.ingest(markdown_paths)
+                total_documents += md_result.documents_processed
+                sections_written += md_result.sections_written
+                chunks_written += md_result.chunks_written
+
+            if not pdf_paths and not markdown_paths:
+                raise RuntimeError(f"No markdown or PDF documents found at {corpus_path}")
+
+            result = IngestionResult(
+                documents_processed=total_documents,
+                sections_written=sections_written,
+                chunks_written=chunks_written,
+            )
 
         return {
             "documents": result.documents_processed,
@@ -136,6 +179,7 @@ class BenchmarkWorkflow:
         llm_model: str = "gpt-4o-mini",
         embedding_model: str | None = None,
         selector_llm: Any | None = None,
+        metrics: Sequence[MetricDefinition] | None = None,
     ) -> dict[str, float]:
         spec = get_dataset_spec(name)
         artifacts_dir = self.artifacts_dir(name)
@@ -200,6 +244,7 @@ class BenchmarkWorkflow:
             output_path=str(output_path),
             retriever_ids=retriever_ids,
             top_k=top_k,
+            metrics=metrics,
         )
 
         result = run_suite(evaluation_config, retrievers)
@@ -218,6 +263,7 @@ class BenchmarkWorkflow:
         llm_model: str = "gpt-4o-mini",
         selector_llm: Any | None = None,
         top_k: int = 3,
+        metrics: Sequence[MetricDefinition] | None = None,
     ) -> dict[str, Any]:
         self.download(name, force=force_download)
         ingest_stats = self.ingest(name, clean_stores=clean_stores, embedding_model=embedding_model)
@@ -228,6 +274,7 @@ class BenchmarkWorkflow:
             embedding_model=embedding_model,
             selector_llm=selector_llm,
             top_k=top_k,
+            metrics=metrics,
         )
         return {"ingestion": ingest_stats, "metrics": metrics}
 

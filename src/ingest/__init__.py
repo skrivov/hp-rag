@@ -4,6 +4,7 @@ from .toc_builder import TOCBuilder, TOCBuilderConfig
 from .chunker import Chunker, ChunkConfig, SectionChunk
 from .simple_chunker import ParagraphChunker
 from .markdown import MarkdownTOCBuilder, MarkdownTOCBuilderConfig
+from .pdf import PyMuPDFTOCBuilder, PyMuPDFTOCBuilderConfig
 from .pipeline import IngestionPipeline, IngestionResult
 
 __all__ = [
@@ -17,4 +18,6 @@ __all__ = [
     "ParagraphChunker",
     "MarkdownTOCBuilder",
     "MarkdownTOCBuilderConfig",
+    "PyMuPDFTOCBuilder",
+    "PyMuPDFTOCBuilderConfig",
 ]
