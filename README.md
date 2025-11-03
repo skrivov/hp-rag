@@ -1,6 +1,6 @@
 # HP-RAG Evaluation Harness
 
-This repository evaluates Hyperlink-Driven Retrieval-Augmented Generation (HP-RAG) alongside a conventional FAISS-based vector retriever. Both systems ingest markdown contracts, retrieve relevant clauses, and feed them into an answer LLM so tariff and duty obligations can be extracted with high fidelity.
+This repository evaluates Hyperlink-Driven Retrieval-Augmented Generation (HP-RAG) alongside a conventional FAISS-based vector retriever. Both systems ingest markdown contracts, retrieve relevant clauses, and feed them into an answer LLM so tariff and duty obligations can be extracted with high fidelity. Every contract question carries a GPT-5-generated ground-truth answer, and both retrievers are scored against that reference using DeepEval metrics.
 
 ## HP-RAG at a Glance
 HP-RAG combines a table-of-contents–aware SQLite store with an LLM selector that proposes the most relevant section paths before generation. This two-stage flow keeps retrieval grounded in document structure (titles, hierarchy, schedules) while preserving generative flexibility. The companion vector pipeline offers a semantic baseline using FAISS shards populated with real OpenAI embeddings. Because vector search relies on cosine similarity, long or multi-faceted contract questions tend to flatten the similarity surface, making exact clause retrieval harder—precisely where HP-RAG’s section-level filtering provides leverage.

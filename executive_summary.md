@@ -10,7 +10,7 @@ The task focuses on extracting tariff, duty, and price-adjustment obligations fr
 5. “India imposes an anti-dumping duty of 15% on HS 7007.19, raising composite duty from the 10% Baseline Composite Duty to 25%. For an undelivered order of 20,000 m² of GLT-SG-3.2 at CIF $8.10/m², compute Buyer’s incremental duty and whether repricing/cancellation rights apply.”
 
 ## Section 3 — Evaluation Approach
-We rebuilt both HP-RAG and a FAISS vector baseline on the contract corpus and evaluated 40 tariff-focused questions via `scripts/run_evals.py`. Answer quality was scored with three complementary similarity measures that appear in the results table:
+We rebuilt both HP-RAG and a FAISS vector baseline on the contract corpus and evaluated 40 tariff-focused questions via `scripts/run_evals.py`. Each prompt includes a GPT-5-generated ground-truth answer in `questions.jsonl`, and both retrievers are scored directly against that reference. Answer quality was assessed with three complementary similarity measures that appear in the results table:
 - **answer_token_f1** – a token-overlap F1 score that rewards exact lexical agreement between model output and the gold answer, highlighting precision on numeric and legal phrases.
 - **answer_embedding_similarity** – cosine similarity of OpenAI embeddings, capturing semantic alignment even when wording differs (useful for paraphrased duties or rights).
 - **answer_llm_correctness** – an LLM-judged match score that qualitatively checks whether the generated narrative stays faithful to the reference answer.
