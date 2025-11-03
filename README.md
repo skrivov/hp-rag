@@ -43,3 +43,5 @@ For a one-page overview of the corpus, question set, metrics, and current compar
 
 ## Potential Optimizations
 Future iterations could tighten HP-RAG’s efficiency by normalizing the table-of-contents strings (removing repeated contract identifiers or numbering boilerplate) before feeding them to the selector LLM, thereby reducing prompt tokens. Other levers include tuning `toc_limit` per corpus, compressing chunk text with key-point summaries, caching selector outputs for recurring queries, or exploring smaller LLMs for the TOC filtering stage while keeping answer generation on a higher-capacity model.
+
+In high-stakes contract intelligence workflows, HP-RAG can also serve as the retrieval backbone for agentic search loops—iterative query chains that refine evidence until the exact clause is found. Pairing the selector/answer pipeline with a deterministic calculator tool (for duties, thresholds, and caps) would further boost numerical consistency, letting the agent delegate arithmetic to code while the LLM focuses on interpretation.

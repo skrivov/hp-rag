@@ -32,4 +32,4 @@ The current question set skews toward relatively short prompts; richer, multi-pa
 | context_f1 | 0.317 | 0.210 |
 
 ### Potential Improvements
-Optimizing HP-RAG may involve compressing TOC entries to strip repetitive boilerplate, lowering token usage during selection. Additional gains could come from adaptive `toc_limit` values, lightweight summarization of long chunks, selector-result caching, or tiered LLM usage (small model for TOC filtering, larger model for final answers).
+Optimizing HP-RAG may involve compressing TOC entries to strip repetitive boilerplate, lowering token usage during selection. Additional gains could come from adaptive `toc_limit` values, lightweight summarization of long chunks, selector-result caching, or tiered LLM usage (small model for TOC filtering, larger model for final answers). In domain-specific agentic workflows, HP-RAG can anchor iterative query loops while a deterministic calculator tool handles duty math, keeping the LLM focused on interpretation and policy reasoning.
