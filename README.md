@@ -1,26 +1,42 @@
 # HP-RAG Evaluation Harness
 
-This repository explores Hyperlink-Driven Retrieval-Augmented Generation (HP-RAG) and compares it with a conventional vector-based RAG pipeline. The project uses uv for dependency management, llama-index for LLM orchestration, FAISS for vector search, SQLite + FTS5 for hyperlink retrieval, and DeepEval for benchmarking.
+This repository evaluates Hyperlink-Driven Retrieval-Augmented Generation (HP-RAG) alongside a conventional FAISS-based vector retriever. Both systems ingest markdown contracts, retrieve relevant clauses, and feed them into an answer LLM so tariff and duty obligations can be extracted with high fidelity.
+
+## HP-RAG at a Glance
+HP-RAG combines a table-of-contents–aware SQLite store with an LLM selector that proposes the most relevant section paths before generation. This two-stage flow keeps retrieval grounded in document structure (titles, hierarchy, schedules) while preserving generative flexibility. The companion vector pipeline offers a semantic baseline using FAISS shards populated with real OpenAI embeddings. Because vector search relies on cosine similarity, long or multi-faceted contract questions tend to flatten the similarity surface, making exact clause retrieval harder—precisely where HP-RAG’s section-level filtering provides leverage.
+
+## Executive Summary
+For a one-page overview of the corpus, question set, metrics, and current comparative results, see the <a href="executive_summary.md">executive summary</a>.
 
 ## Quickstart
 1. Install dependencies: `uv sync`
 2. Run an interactive shell: `uv run python`
-3. Execute the main entry point (placeholder): `uv run python main.py`
+3. Ingest contracts and build artifacts: `uv run python scripts/build_toc.py data/contracts artifacts/contracts --embedding-model text-embedding-3-small`
+4. Evaluate HP-RAG vs. vector baseline: `uv run python scripts/run_evals.py --config configs/experiments/contracts_llm_vs_vector.yaml --table-output artifacts/contracts/comparison.md`
 
 ## Pipeline Overview
 - Ingest markdown corpus into SQLite + FAISS: `uv run python scripts/build_toc.py ./docs ./artifacts`
 - Run baseline evaluations: `uv run python scripts/run_evals.py ./datasets/questions.jsonl ./artifacts/eval.json --sqlite-db ./artifacts/hyperlink.db --faiss-dir ./artifacts/faiss_index`
 - Render comparison report: `uv run python scripts/report.py ./artifacts/eval.json --output ./artifacts/report.md`
 
-## Benchmark Workflow
-- List supported datasets: `uv run python scripts/run_workflow.py list`
-- Download a dataset: `uv run python scripts/run_workflow.py download beir-fiqa`
-- Ingest and build stores (optionally cleaning prior artifacts): `uv run python scripts/run_workflow.py ingest beir-fiqa --clean-stores --embedding-model text-embedding-3-small`
-- Evaluate (with optional vector baseline): `uv run python scripts/run_workflow.py evaluate beir-fiqa --include-vector --embedding-model text-embedding-3-small`
-- End-to-end run: `uv run python scripts/run_workflow.py full beir-fiqa --force-download --clean-stores --include-vector --embedding-model text-embedding-3-small`
-- Remove cached dataset and artifacts: `uv run python scripts/run_workflow.py cleanup beir-fiqa --remove-artifacts`
+## Key Code Elements
+- `src/hp_rag/retriever.py` — LLM-guided TOC filter that selects hyperlink sections from SQLite and returns structured contexts.
+- `src/rag/retriever.py` — FAISS-backed semantic retriever that mirrors the HP-RAG interface for apples-to-apples comparisons.
+- `src/orchestration/query_runner.py` — Shared answer-generation orchestrator; templates, system prompts, and LLM configuration are injected via experiment configs.
+- `scripts/build_toc.py` — End-to-end ingestion pipeline that chunkifies markdown/pdfs, populates SQLite (HP-RAG) and FAISS (vector) stores.
+- `scripts/prepare_contract_questions.py` — Flattens the contract QA spec into JSONL and attaches citation-based reference contexts for retrieval metrics.
+- `scripts/run_evals.py` — Main evaluation CLI supporting config-driven experiments, prompt overrides, and comparison table rendering.
+- `configs/experiments/` — Reusable experiment presets (e.g., `contracts_llm_vs_vector.yaml`) that capture storage paths, retriever options, and prompt templates.
+- `configs/prompts/` — Dataset-specific answer prompts; the contracts template enforces the summary + JSON “Details” format expected by evaluators.
+- `data/contracts/` — GPT-5 Pro–synthesized contract corpus plus the evaluation questions (`questions.jsonl`).
 
-## Next Steps
-- Implement ingestion scripts that build TOC-aware document sections.
-- Stand up dual retrievers (vector + HP) and wire them into a shared interface.
-- Build DeepEval suites to compare answer quality, context precision, and latency.
+## What’s Been Tested Today
+- Contract ingestion into SQLite + FAISS via `scripts/build_toc.py data/contracts artifacts/contracts --embedding-model text-embedding-3-small`.
+- HP-RAG and vector retrieval smoke tests (`scripts/run_contract_smoke.py`) using dataset-aligned prompts.
+- Full evaluation run with DeepEval metrics through `scripts/run_evals.py --config configs/experiments/contracts_llm_vs_vector.yaml`, producing the comparison table captured in the <a href="executive_summary.md">executive summary</a>.
+- Question preparation with citation-based reference contexts using `scripts/prepare_contract_questions.py`.
+
+## Future-Facing Design (NOT YET EXECUTED)
+- Dataset adapters under `src/ingest/adapters/` and the orchestration CLI (`scripts/run_workflow.py`) support downloading public corpora (BEIR, HotpotQA, MIRACL, SQuAD) and constructing retriever artifacts automatically. These flows are design scaffolds and have not been validated in the current contracts-focused sprint.
+- Experiment presets in `configs/datasets/` will pair with `run_workflow.py` for end-to-end ingestion → evaluation once external datasets are integrated.
+- Additional prompt templates and retriever settings can be layered via new experiment configs to extend the framework beyond the contract corpus.

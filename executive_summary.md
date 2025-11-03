@@ -1,8 +1,8 @@
 ## Section 1 — HP-RAG Overview
-Hyperlink-Positioned Retrieval-Augmented Generation (HP-RAG) augments contract question answering with a two-step pipeline: an LLM first filters a table-of-contents-aware SQLite store to select the most relevant sections, then a downstream answer LLM synthesizes a response from those curated passages. This architecture keeps retrieval grounded in document structure while preserving full-fidelity generation from the selected snippets.
+Hyperlink-Positioned Retrieval-Augmented Generation (HP-RAG) augments contract question answering with a two-step pipeline: an LLM first filters a table-of-contents-aware SQLite store to select the most relevant sections, then a downstream answer LLM synthesizes a response from those curated passages. This architecture keeps retrieval grounded in document structure while preserving full-fidelity generation from the selected snippets. Unlike cosine-based vector retrieval, HP-RAG maintains precision even when questions are long or combine multiple tariff scenarios—conditions that typically flatten vector similarity scores.
 
 ## Section 2 — Task & Dataset
-The task focuses on extracting tariff, duty, and price-adjustment obligations from long-form procurement and distribution agreements. Each contract is a GPT-5 Pro-generated markdown document that mirrors realistic corporate legal language, complete with Incoterms, tariff-adjustment clauses, and schedules listing HS codes. Example evaluation questions include:
+The task focuses on extracting tariff, duty, and price-adjustment obligations from long-form procurement and distribution agreements stored under <a href="data/contracts">data/contracts</a>. Each contract is a GPT-5 Pro-generated markdown document that mirrors realistic corporate legal language, complete with Incoterms, tariff-adjustment clauses, and schedules listing HS codes. The evaluation questions live in <a href="data/contracts/questions.jsonl">questions.jsonl</a>. Example prompts include:
 1. “Compute our net exposure if the US raises Section 301 tariffs on HS 8538.90 from 25% to 35% effective next month… Who pays what and can we cancel?”
 2. “If the US reduces tariffs on HS 8542.31 from 25% to 10% for Chinese origin, what price change applies to AR-IC-M4 for undelivered quantities with CIF $30/unit?”
 3. “Identify all HS codes and baseline US duty rates from the Agreement for analytics.”
@@ -10,9 +10,15 @@ The task focuses on extracting tariff, duty, and price-adjustment obligations fr
 5. “India imposes an anti-dumping duty of 15% on HS 7007.19, raising composite duty from the 10% Baseline Composite Duty to 25%. For an undelivered order of 20,000 m² of GLT-SG-3.2 at CIF $8.10/m², compute Buyer’s incremental duty and whether repricing/cancellation rights apply.”
 
 ## Section 3 — Evaluation Approach
-We rebuilt both HP-RAG and a FAISS vector baseline on the contract corpus, then ran `scripts/run_evals.py` over 40 tariff-focused questions. DeepEval metrics capture answer quality (token F1, embedding cosine similarity, LLM-judged correctness) and retrieval fidelity (context precision/recall/F1). Latency and token counts round out operational profiling, allowing a like-for-like comparison of accuracy and efficiency.
+We rebuilt both HP-RAG and a FAISS vector baseline on the contract corpus and evaluated 40 tariff-focused questions via `scripts/run_evals.py`. Answer quality was scored with three complementary similarity measures that appear in the results table:
+- **answer_token_f1** – a token-overlap F1 score that rewards exact lexical agreement between model output and the gold answer, highlighting precision on numeric and legal phrases.
+- **answer_embedding_similarity** – cosine similarity of OpenAI embeddings, capturing semantic alignment even when wording differs (useful for paraphrased duties or rights).
+- **answer_llm_correctness** – an LLM-judged match score that qualitatively checks whether the generated narrative stays faithful to the reference answer.
+Retrieval fidelity is measured with **context_precision**, **context_recall**, and **context_f1**, which compare retrieved passages against the ground-truth citations supplied in `reference_contexts`. We also log **avg_contexts**, **avg_tokens**, and **avg_latency_ms** to compare operational efficiency across retrievers.
 
 ## Section 4 — Results
+The current question set skews toward relatively short prompts; richer, multi-part scenarios are still needed to fully demonstrate HP-RAG’s advantages over cosine-only retrieval.
+
 | Metric | vector | hyperlink |
 | --- | --- | --- |
 | avg_contexts | 3.000 | 3.000 |
