@@ -4,8 +4,15 @@ from .toc_builder import TOCBuilder, TOCBuilderConfig
 from .chunker import Chunker, ChunkConfig, SectionChunk
 from .simple_chunker import ParagraphChunker
 from .markdown import MarkdownTOCBuilder, MarkdownTOCBuilderConfig
-from .pdf import PyMuPDFTOCBuilder, PyMuPDFTOCBuilderConfig
 from .pipeline import IngestionPipeline, IngestionResult
+
+try:
+    from .pdf import PyMuPDFTOCBuilder, PyMuPDFTOCBuilderConfig
+
+    __all_pdf__ = ["PyMuPDFTOCBuilder", "PyMuPDFTOCBuilderConfig"]
+except ModuleNotFoundError:
+    PyMuPDFTOCBuilder = PyMuPDFTOCBuilderConfig = None  # type: ignore[assignment]
+    __all_pdf__ = []
 
 __all__ = [
     "TOCBuilder",
@@ -18,6 +25,4 @@ __all__ = [
     "ParagraphChunker",
     "MarkdownTOCBuilder",
     "MarkdownTOCBuilderConfig",
-    "PyMuPDFTOCBuilder",
-    "PyMuPDFTOCBuilderConfig",
-]
+] + __all_pdf__
