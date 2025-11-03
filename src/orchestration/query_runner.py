@@ -21,13 +21,8 @@ class QueryRunnerConfig:
     system_prompt: str = (
         "You are a helpful assistant that answers questions using the provided context."
     )
-    prompt_template: str = (
-        "{system_prompt}\n\n"
-        "Question: {query}\n\n"
-        "Context:\n{context}\n\n"
-        "Answer:"
-    )
     default_top_k: int = 5
+    prompt_template: str | None = None
 
 
 class QueryRunner:
@@ -94,7 +89,8 @@ class QueryRunner:
             context_snippets.append(snippet)
 
         context_block = "\n\n".join(context_snippets) or "No relevant context provided."
-        return self.config.prompt_template.format(
+        template = self.config.prompt_template or self._default_prompt_template()
+        return template.format(
             system_prompt=self.config.system_prompt,
             query=query,
             context=context_block,
@@ -174,6 +170,15 @@ class QueryRunner:
         title = getattr(context, "title", f"Context {index}")
         text = getattr(context, "text", "")
         return str(title), str(text)
+
+    @staticmethod
+    def _default_prompt_template() -> str:
+        return (
+            "{system_prompt}\n\n"
+            "Question: {query}\n\n"
+            "Retrieved Context:\n{context}\n\n"
+            "Answer:"
+        )
 
 
 @dataclass(slots=True)

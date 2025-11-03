@@ -27,6 +27,7 @@ from src.orchestration.config_loader import (
     load_experiment_config,
     prepare_datasets,
 )
+from src.orchestration.query_runner import QueryRunnerConfig
 from src.hp_rag.retriever import HyperlinkRetriever, HyperlinkRetrieverConfig
 from src.hp_rag.storage import SQLiteHyperlinkConfig, SQLiteHyperlinkStore
 from src.rag.retriever import VectorRetriever, VectorRetrieverConfig
@@ -162,6 +163,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Path to an experiment config file (YAML/TOML/JSON) to seed arguments",
     )
+    parser.add_argument(
+        "--prompt-template-file",
+        type=Path,
+        default=None,
+        help="Optional prompt template file for answer generation (overrides experiment config).",
+    )
 
     return parser
 
@@ -267,6 +274,7 @@ def main() -> None:
     args._adapter_kwargs = {}
     args._prepared_datasets = []
     args._hp_rag_overrides = {}
+    args._query_runner_config = {}
 
     if args.config:
         args.config = args.config.resolve()
@@ -278,6 +286,7 @@ def main() -> None:
         )
         args._prepared_datasets = prepared_datasets
         args._hp_rag_overrides = experiment_config.hp_rag or {}
+        args._query_runner_config = experiment_config.query_runner or {}
         print(
             f"[info] Loaded experiment config {experiment_config.experiment_name!r} from {args.config}"
         )
@@ -396,7 +405,7 @@ def main() -> None:
                 md_result = pipeline.ingest(markdown_docs)
                 documents_processed += md_result.documents_processed
                 sections_written += md_result.sections_written
-                        chunks_written += md_result.chunks_written
+                chunks_written += md_result.chunks_written
 
             if not pdf_docs and not markdown_docs:
                 raise FileNotFoundError(
@@ -463,7 +472,35 @@ def main() -> None:
         top_k=args.top_k,
     )
 
-    result = run_suite(evaluation_config, retrievers)  # type: ignore[arg-type]
+    runner_overrides: dict[str, object] = dict(getattr(args, "_query_runner_config", {}))
+    if args.prompt_template_file:
+        runner_overrides["prompt_template_path"] = args.prompt_template_file
+
+    prompt_template_text: str | None = None
+    prompt_template_path = runner_overrides.get("prompt_template_path")
+    if prompt_template_path:
+        prompt_template_text = Path(str(prompt_template_path)).read_text(encoding="utf-8")
+    else:
+        prompt_template = runner_overrides.get("prompt_template")
+        if isinstance(prompt_template, str):
+            prompt_template_text = prompt_template
+
+    default_runner = QueryRunnerConfig()
+    runner_cfg = QueryRunnerConfig(
+        llm_model=str(runner_overrides.get("llm_model") or args.llm_model),
+        temperature=float(runner_overrides.get("temperature", 0.0)),
+        system_prompt=str(runner_overrides.get("system_prompt") or default_runner.system_prompt),
+        prompt_template=prompt_template_text,
+        default_top_k=args.top_k,
+    )
+    use_stub_llm = bool(runner_overrides.get("use_stub_llm", False))
+
+    result = run_suite(
+        evaluation_config,
+        retrievers,  # type: ignore[arg-type]
+        runner_config=runner_cfg,
+        use_stub_llm=use_stub_llm,
+    )
 
     def _collect_rows(metrics: dict[str, float], retrievers: list[str]):
         keys: list[str] = [

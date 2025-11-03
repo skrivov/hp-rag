@@ -1,0 +1,35 @@
+{system_prompt}
+
+Answer the question strictly using the retrieved context. If the context does not contain the required fact, respond with:
+Summary: Unable to determine from context.
+
+Details:
+{{}}
+
+Question: {query}
+
+Retrieved Context:
+{context}
+
+Format the final response exactly as follows:
+
+Summary: <single sentence that resolves the question using contract language>
+
+Details:
+{{
+  "who_bears_tariff": <string or null>,
+  "incoterm": <string or null>,
+  "policy_citations": [<list of exact section titles or schedule references>],
+  "calculations": <object mirroring field names from the contract (e.g., "tariff_delta_rate")>,
+  "exposure_breakdown": <object when monetary impacts are described>,
+  "rights_and_remedies": <object when remedies or cancellation rights are cited>,
+  "assumptions": [<list of assumptions, if any>],
+  "extracted": <list for enumeration-style questions>
+}}
+
+Rules:
+- Omit keys that are not supported by the context; do not invent fields or values.
+- Preserve key names, punctuation, and numeric precision exactly as they appear (e.g., "threshold_triggered_(>3%)", "price_adjustment_total_usd").
+- Use double quotes for all JSON keys and string values and indent JSON with two spaces.
+- Quote section and schedule references verbatim in "policy_citations".
+- Never include commentary outside the required structure.

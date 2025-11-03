@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, Protocol, Sequence
 
@@ -155,13 +156,23 @@ class LLMJudgementStrategy(AnswerSimilarityStrategy):
             return self._scorer
 
         load_dotenv()
-        from deepeval.metrics.answer_correctness import AnswerCorrectnessMetric as DeepEvalAnswerCorrectnessMetric
+        try:
+            from deepeval.metrics.answer_correctness import (  # type: ignore[import-not-found]
+                AnswerCorrectnessMetric as DeepEvalAnswerCorrectnessMetric,
+            )
 
-        self._scorer = DeepEvalAnswerCorrectnessMetric(
-            model=self.model,
-            threshold=self.threshold,
-            **self.metric_kwargs,
-        )
+            self._scorer = DeepEvalAnswerCorrectnessMetric(
+                model=self.model,
+                threshold=self.threshold,
+                **self.metric_kwargs,
+            )
+            return self._scorer
+        except ModuleNotFoundError:
+            self._scorer = _SimpleLLMCorrectnessMetric(
+                model=self.model,
+                threshold=self.threshold,
+                **self.metric_kwargs,
+            )
         return self._scorer
 
     def compute(self, expected: str, actual: str) -> float:
@@ -176,3 +187,58 @@ class LLMJudgementStrategy(AnswerSimilarityStrategy):
         score = scorer.measure(test_case)
         return float(score or 0.0)
 
+
+class _SimpleLLMCorrectnessMetric:
+    """Fallback metric when DeepEval AnswerCorrectness is unavailable."""
+
+    def __init__(
+        self,
+        *,
+        model: str,
+        threshold: float,
+        prompt_template: str | None = None,
+        temperature: float = 0.0,
+        **_: Any,
+    ) -> None:
+        self.model = model
+        self.threshold = threshold
+        self.temperature = temperature
+        self.prompt_template = prompt_template or (
+            "You are an expert contract analyst. Given a reference answer and a candidate answer, "
+            "return a single number between 0 and 1 indicating how well the candidate matches the reference. "
+            "Return the score as 'SCORE: <number>'.\n\nReference Answer:\n{expected}\n\n"
+            "Candidate Answer:\n{actual}\n\nSCORE:"
+        )
+        self._llm: Any | None = None
+        self.score: float | None = None
+        self.reason: str | None = None
+
+    def _ensure_llm(self) -> Any:
+        if self._llm is None:
+            load_dotenv()
+            from llama_index.llms.openai import OpenAI
+
+            self._llm = OpenAI(model=self.model, temperature=self.temperature)
+        return self._llm
+
+    def measure(self, test_case: Any) -> float:
+        llm = self._ensure_llm()
+        prompt = self.prompt_template.format(
+            expected=test_case.expected_output or "",
+            actual=test_case.actual_output or "",
+        )
+        response = llm.complete(prompt)
+        text = getattr(response, "text", None)
+        if not isinstance(text, str):
+            text = str(response)
+        match = re.search(r"([-+]?\d*\.?\d+)", text)
+        score = float(match.group(1)) if match else 0.0
+        score = max(0.0, min(score, 1.0))
+        self.score = score
+        self.reason = f"Fallback LLM score parsed from: {text}"
+        return score
+
+    def is_successful(self) -> bool:
+        if self.score is None:
+            return False
+        return self.score >= self.threshold

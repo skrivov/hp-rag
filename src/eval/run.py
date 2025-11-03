@@ -85,6 +85,9 @@ def run_suite(
     retrievers: Mapping[str, BaseRetriever],
     answer_generator: Optional[AnswerGenerator] = None,
     query_runner_factory: Optional[QueryRunnerFactory] = None,
+    *,
+    runner_config: QueryRunnerConfig | None = None,
+    use_stub_llm: bool = True,
 ) -> EvaluationResult:
     """Execute evaluation suite using DeepEval metrics and retriever statistics."""
 
@@ -93,6 +96,16 @@ def run_suite(
     aggregated: dict[str, float] = {}
     answer_fn = answer_generator or _default_answer
     query_runners: Dict[str, QueryRunner] = {}
+    base_runner_config = runner_config or QueryRunnerConfig()
+
+    def _build_runner_config() -> QueryRunnerConfig:
+        return QueryRunnerConfig(
+            llm_model=base_runner_config.llm_model,
+            temperature=base_runner_config.temperature,
+            system_prompt=base_runner_config.system_prompt,
+            prompt_template=base_runner_config.prompt_template,
+            default_top_k=config.top_k,
+        )
 
     def resolve_runner(rid: str, retriever_obj: BaseRetriever) -> QueryRunner:
         if rid not in query_runners:
@@ -101,8 +114,8 @@ def run_suite(
             else:
                 query_runners[rid] = QueryRunner(
                     retriever_obj,
-                    QueryRunnerConfig(default_top_k=config.top_k),
-                    llm=ContextualConcatLLM(),
+                    _build_runner_config(),
+                    llm=ContextualConcatLLM() if use_stub_llm else None,
                 )
         return query_runners[rid]
 

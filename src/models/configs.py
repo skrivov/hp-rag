@@ -75,6 +75,7 @@ class ExperimentConfig(BaseModel):
     include_vector: bool = False
     retrievers: List[RetrieverConfig] = Field(default_factory=list)
     hp_rag: Dict[str, Any] = Field(default_factory=dict)
+    query_runner: Dict[str, Any] = Field(default_factory=dict)
     evaluation: EvaluationRunConfig
 
     def resolve_paths(self, base_path: Path) -> "ExperimentConfig":
@@ -117,6 +118,13 @@ class ExperimentConfig(BaseModel):
                 )
             retrievers.append(processed)
         values["retrievers"] = retrievers
+
+        runner_cfg = dict(values.get("query_runner") or {})
+        prompt_path = runner_cfg.get("prompt_template_path") or runner_cfg.get("prompt_template_file")
+        if prompt_path:
+            resolved = (base_path / Path(prompt_path)).resolve() if not Path(prompt_path).is_absolute() else Path(prompt_path)
+            runner_cfg["prompt_template_path"] = resolved
+        values["query_runner"] = runner_cfg
 
         return ExperimentConfig.model_validate(values)
 

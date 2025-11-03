@@ -1,0 +1,33 @@
+experiment_name: contracts_llm_vs_vector
+corpus: ../../data/contracts
+sqlite_db: ../../artifacts/contracts/hyperlink.db
+faiss_dir: ../../artifacts/contracts/faiss_index
+embedding_model: text-embedding-3-small
+rebuild: true
+include_vector: true
+query_runner:
+  llm_model: gpt-4o-mini
+  temperature: 0.0
+  use_stub_llm: false
+  system_prompt: >
+    You are a trade compliance analyst. Read the retrieved contract sections carefully
+    and answer the question using only those passages. When you are unsure, explicitly
+    state that the context is insufficient.
+  prompt_template_path: ../prompts/contracts_answer_prompt.txt
+retrievers:
+  - type: hp_rag
+    llm_model: gpt-4o-mini
+    max_sections: 5
+    neighbor_window: 1
+    toc_limit: 100
+    top_k: 3
+  - type: vector
+    embedding_model: text-embedding-3-small
+    faiss_index: ./artifacts/contracts/faiss_index
+    top_k: 3
+evaluation:
+  suite: contracts
+  questions: ../../data/contracts/questions.jsonl
+  output: ../../artifacts/contracts/eval.json
+  table_output: ../../artifacts/contracts/comparison.md
+  table_format: plain
