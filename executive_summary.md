@@ -1,0 +1,26 @@
+## Section 1 — HP-RAG Overview
+Hyperlink-Positioned Retrieval-Augmented Generation (HP-RAG) augments contract question answering with a two-step pipeline: an LLM first filters a table-of-contents-aware SQLite store to select the most relevant sections, then a downstream answer LLM synthesizes a response from those curated passages. This architecture keeps retrieval grounded in document structure while preserving full-fidelity generation from the selected snippets.
+
+## Section 2 — Task & Dataset
+The task focuses on extracting tariff, duty, and price-adjustment obligations from long-form procurement and distribution agreements. Each contract is a GPT-5 Pro-generated markdown document that mirrors realistic corporate legal language, complete with Incoterms, tariff-adjustment clauses, and schedules listing HS codes. Example evaluation questions include:
+1. “Compute our net exposure if the US raises Section 301 tariffs on HS 8538.90 from 25% to 35% effective next month… Who pays what and can we cancel?”
+2. “If the US reduces tariffs on HS 8542.31 from 25% to 10% for Chinese origin, what price change applies to AR-IC-M4 for undelivered quantities with CIF $30/unit?”
+3. “Identify all HS codes and baseline US duty rates from the Agreement for analytics.”
+4. “EU imposes a retaliatory tariff that raises the composite duty on HS 9026.20 by +9% for three consecutive months. What remedies are available and who bears the duty?”
+5. “India imposes an anti-dumping duty of 15% on HS 7007.19, raising composite duty from the 10% Baseline Composite Duty to 25%. For an undelivered order of 20,000 m² of GLT-SG-3.2 at CIF $8.10/m², compute Buyer’s incremental duty and whether repricing/cancellation rights apply.”
+
+## Section 3 — Evaluation Approach
+We rebuilt both HP-RAG and a FAISS vector baseline on the contract corpus, then ran `scripts/run_evals.py` over 40 tariff-focused questions. DeepEval metrics capture answer quality (token F1, embedding cosine similarity, LLM-judged correctness) and retrieval fidelity (context precision/recall/F1). Latency and token counts round out operational profiling, allowing a like-for-like comparison of accuracy and efficiency.
+
+## Section 4 — Results
+| Metric | vector | hyperlink |
+| --- | --- | --- |
+| avg_contexts | 3.000 | 3.000 |
+| avg_tokens | 225.800 | 160.800 |
+| avg_latency_ms | 337.127 | 6340.677 |
+| answer_token_f1 | 0.267 | 0.239 |
+| answer_embedding_similarity | 0.821 | 0.774 |
+| answer_llm_correctness | 0.467 | 0.390 |
+| context_precision | 0.258 | 0.167 |
+| context_recall | 0.490 | 0.331 |
+| context_f1 | 0.317 | 0.210 |
