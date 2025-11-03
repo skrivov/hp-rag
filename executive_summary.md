@@ -30,3 +30,6 @@ The current question set skews toward relatively short prompts; richer, multi-pa
 | context_precision | 0.258 | 0.167 |
 | context_recall | 0.490 | 0.331 |
 | context_f1 | 0.317 | 0.210 |
+
+### Potential Improvements
+Optimizing HP-RAG may involve compressing TOC entries to strip repetitive boilerplate, lowering token usage during selection. Additional gains could come from adaptive `toc_limit` values, lightweight summarization of long chunks, selector-result caching, or tiered LLM usage (small model for TOC filtering, larger model for final answers).

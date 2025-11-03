@@ -40,3 +40,6 @@ For a one-page overview of the corpus, question set, metrics, and current compar
 - Dataset adapters under `src/ingest/adapters/` and the orchestration CLI (`scripts/run_workflow.py`) support downloading public corpora (BEIR, HotpotQA, MIRACL, SQuAD) and constructing retriever artifacts automatically. These flows are design scaffolds and have not been validated in the current contracts-focused sprint.
 - Experiment presets in `configs/datasets/` will pair with `run_workflow.py` for end-to-end ingestion → evaluation once external datasets are integrated.
 - Additional prompt templates and retriever settings can be layered via new experiment configs to extend the framework beyond the contract corpus.
+
+## Potential Optimizations
+Future iterations could tighten HP-RAG’s efficiency by normalizing the table-of-contents strings (removing repeated contract identifiers or numbering boilerplate) before feeding them to the selector LLM, thereby reducing prompt tokens. Other levers include tuning `toc_limit` per corpus, compressing chunk text with key-point summaries, caching selector outputs for recurring queries, or exploring smaller LLMs for the TOC filtering stage while keeping answer generation on a higher-capacity model.
