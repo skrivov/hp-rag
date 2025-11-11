@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from src.models.section import SectionNode
+from src.models.tenant import TenantRecord
 from src.hp_rag.storage import SQLiteHyperlinkConfig, SQLiteHyperlinkStore
 
 
@@ -56,5 +57,28 @@ def test_sqlite_store_upsert_and_search(tmp_path):
 
     limited = store.iter_sections(max_level=1)
     assert any(row["path"] == "doc" for row in limited)
+
+    store.close()
+
+
+def test_tenant_registration_and_filtering(tmp_path):
+    db_path = tmp_path / "hyperlink.db"
+    store = SQLiteHyperlinkStore(SQLiteHyperlinkConfig(db_path=db_path))
+    store.initialize()
+
+    root = build_sample_sections()
+    store.upsert_sections([root])
+
+    tenant = TenantRecord(tenant_id="apex-robotics", name="Apex Robotics, Inc.", role="Buyer", aliases=["Buyer"])
+    store.register_document_tenants("doc", [tenant])
+
+    tenants = store.list_tenants()
+    assert tenants and tenants[0]["tenant_id"] == "apex-robotics"
+    assert store.list_documents_for_tenant("apex-robotics") == ["doc"]
+
+    filtered = store.iter_sections(tenant_id="apex-robotics")
+    assert filtered  # sections still returned
+    for row in filtered:
+        assert row["path"].startswith("doc")
 
     store.close()

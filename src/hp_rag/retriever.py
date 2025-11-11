@@ -34,6 +34,7 @@ class HyperlinkRetrieverConfig:
     max_sections: int = 10
     neighbor_window: int = 0  # Ignored; retained for backwards compatibility
     retriever_id: str = "hyperlink"
+    tenant_id: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.llm is None and not self.llm_model:
@@ -93,13 +94,19 @@ class HyperlinkRetriever(BaseRetriever):
             "toc_candidates": len(candidate_paths),
             "toc_entries": len(toc_payload),
             "selector": "llm",
+            "candidate_paths": candidate_paths,
+            "candidate_scores": None,
+            "chosen_paths": [ctx.path for ctx in contexts],
+            "selector_usage": {},
         }
+        if self.config.tenant_id:
+            metadata["tenant_id"] = self.config.tenant_id
         return contexts, metadata
 
     # Helpers --------------------------------------------------------------
 
     def _collect_toc(self) -> List[dict]:
-        rows = self._store.iter_sections()
+        rows = self._store.iter_sections(tenant_id=self.config.tenant_id)
         toc = [
             {
                 "path": row["path"],

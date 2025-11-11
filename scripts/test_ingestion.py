@@ -11,6 +11,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 from src.ingest.markdown import MarkdownTOCBuilder, MarkdownTOCBuilderConfig
 from src.ingest.pipeline import IngestionPipeline, IngestionResult
 from src.ingest.simple_chunker import ParagraphChunker
+from src.ingest.tenant_extractor import TenantExtractor
 from src.hp_rag.storage import SQLiteHyperlinkConfig, SQLiteHyperlinkStore
 
 try:
@@ -138,6 +139,7 @@ def main() -> None:
         chunker=ParagraphChunker(),
         sqlite_store=store,
         vector_store=None,
+        tenant_extractor=TenantExtractor(),
     )
 
     markdown_docs, pdf_docs = discover_documents(args.corpus)

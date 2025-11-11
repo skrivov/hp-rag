@@ -60,8 +60,14 @@ class VectorRetriever(BaseRetriever):
             )
 
         contexts = contexts[:top_k]
-        return contexts, {"raw_hits": len(hits)}
+        metadata = {
+            "raw_hits": len(hits),
+            "doc_ids": [ctx.path for ctx in contexts],
+            "scores": [ctx.score for ctx in contexts],
+        }
+        return contexts, metadata
 
 
 __all__ = ["VectorRetriever", "VectorRetrieverConfig"]
 
+  

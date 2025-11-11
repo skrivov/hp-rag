@@ -16,6 +16,7 @@ from src.ingest import (
     PyMuPDFTOCBuilderConfig,
 )
 from src.ingest.adapters.factory import adapter_choices, create_adapter
+from src.ingest.tenant_extractor import TenantExtractor
 from src.hp_rag.storage import SQLiteHyperlinkConfig, SQLiteHyperlinkStore
 from src.rag.storage import FaissVectorConfig, FaissVectorStore
 
@@ -85,6 +86,7 @@ def main() -> None:
         chunker=ParagraphChunker(),
         sqlite_store=sqlite_store,
         vector_store=vector_store,
+        tenant_extractor=TenantExtractor(),
     )
 
     sections_written = 0

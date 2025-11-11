@@ -10,6 +10,7 @@ from src.hp_rag.retriever import HyperlinkRetriever, HyperlinkRetrieverConfig
 from src.hp_rag.storage import SQLiteHyperlinkConfig, SQLiteHyperlinkStore
 from src.ingest import (
     IngestionPipeline,
+    IngestionResult,
     MarkdownTOCBuilder,
     MarkdownTOCBuilderConfig,
     ParagraphChunker,

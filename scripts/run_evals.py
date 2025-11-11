@@ -19,6 +19,7 @@ from src.ingest import (
     ParagraphChunker,
     PyMuPDFTOCBuilder,
     PyMuPDFTOCBuilderConfig,
+    TenantExtractor,
 )
 from src.ingest.adapters.factory import adapter_choices, create_adapter
 from src.orchestration.config_loader import (
@@ -359,6 +360,7 @@ def main() -> None:
             chunker=ParagraphChunker(),
             sqlite_store=sqlite_store,
             vector_store=faiss_store,
+            tenant_extractor=TenantExtractor(),
         )
         sections_written = 0
         chunks_written = 0

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import sqlite3
 from dataclasses import dataclass
@@ -7,6 +8,7 @@ from pathlib import Path
 from typing import Iterable, List, Optional, TYPE_CHECKING
 
 from src.models.section import SectionNode
+from src.models.tenant import TenantRecord
 
 if TYPE_CHECKING:
     from src.ingest.chunker import SectionChunk
@@ -64,6 +66,25 @@ class SQLiteHyperlinkStore:
                 text TEXT NOT NULL,
                 FOREIGN KEY(section_path) REFERENCES sections(path)
             );
+
+            CREATE TABLE IF NOT EXISTS tenants (
+                tenant_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                role TEXT,
+                aliases TEXT,
+                source TEXT DEFAULT 'document'
+            );
+
+            CREATE TABLE IF NOT EXISTS document_tenants (
+                document_id TEXT NOT NULL,
+                tenant_id TEXT NOT NULL,
+                PRIMARY KEY (document_id, tenant_id),
+                FOREIGN KEY(document_id) REFERENCES sections(document_id),
+                FOREIGN KEY(tenant_id) REFERENCES tenants(tenant_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_document_tenants_tenant
+                ON document_tenants (tenant_id);
 
             CREATE VIRTUAL TABLE IF NOT EXISTS sections_fts USING fts5(
                 path UNINDEXED,
@@ -141,6 +162,103 @@ class SQLiteHyperlinkStore:
         )
         self.conn.commit()
 
+    def register_document_tenants(self, document_id: str, tenants: Iterable[TenantRecord]) -> None:
+        """Persist tenants and link them to a document."""
+
+        items = list(tenants)
+        if not items:
+            return
+
+        cursor = self.conn.cursor()
+        for tenant in items:
+            aliases = json.dumps(sorted(set(tenant.aliases))) if tenant.aliases else None
+            cursor.execute(
+                """
+                INSERT INTO tenants(tenant_id, name, role, aliases, source)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(tenant_id) DO UPDATE SET
+                    name=excluded.name,
+                    role=COALESCE(excluded.role, tenants.role),
+                    aliases=COALESCE(excluded.aliases, tenants.aliases),
+                    source=COALESCE(excluded.source, tenants.source);
+                """,
+                (tenant.tenant_id, tenant.name, tenant.role, aliases, tenant.source or "document"),
+            )
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO document_tenants(document_id, tenant_id)
+                VALUES (?, ?);
+                """,
+                (document_id, tenant.tenant_id),
+            )
+        self.conn.commit()
+
+    def list_tenants(
+        self,
+        *,
+        query: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[sqlite3.Row]:
+        cursor = self.conn.cursor()
+        params: List[object] = []
+        where_clauses: List[str] = []
+
+        if query:
+            like = f"%{query.lower()}%"
+            where_clauses.append(
+                "(LOWER(name) LIKE ? OR LOWER(role) LIKE ? OR LOWER(COALESCE(aliases, '')) LIKE ?)"
+            )
+            params.extend([like, like, like])
+
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+        cursor.execute(
+            f"""
+            SELECT t.*, (
+                SELECT COUNT(*)
+                FROM document_tenants dt
+                WHERE dt.tenant_id = t.tenant_id
+            ) AS document_count
+            FROM tenants t
+            {where_sql}
+            ORDER BY t.name
+            LIMIT ?
+            OFFSET ?;
+            """,
+            (*params, limit, offset),
+        )
+        return cursor.fetchall()
+
+    def fetch_tenant(self, tenant_id: str) -> Optional[sqlite3.Row]:
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+            SELECT t.*, (
+                SELECT COUNT(*)
+                FROM document_tenants dt
+                WHERE dt.tenant_id = t.tenant_id
+            ) AS document_count
+            FROM tenants t
+            WHERE tenant_id = ?;
+            """,
+            (tenant_id,),
+        )
+        return cursor.fetchone()
+
+    def list_documents_for_tenant(self, tenant_id: str) -> List[str]:
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+            SELECT document_id
+            FROM document_tenants
+            WHERE tenant_id = ?
+            ORDER BY document_id;
+            """,
+            (tenant_id,),
+        )
+        rows = cursor.fetchall()
+        return [row["document_id"] for row in rows]
+
     def search(self, query: str, *, limit: int = 10) -> List[sqlite3.Row]:
         """Run a full-text search across sections."""
 
@@ -185,18 +303,98 @@ class SQLiteHyperlinkStore:
         cursor.execute(query, path_list)
         return cursor.fetchall()
 
-    def iter_sections(self, *, max_level: Optional[int] = None) -> List[sqlite3.Row]:
+    def iter_sections(
+        self,
+        *,
+        max_level: Optional[int] = None,
+        tenant_id: Optional[str] = None,
+    ) -> List[sqlite3.Row]:
         cursor = self.conn.cursor()
-        if max_level is None:
+        clauses: List[str] = []
+        params: List[object] = []
+        if max_level is not None:
+            clauses.append("level <= ?")
+            params.append(max_level)
+        if tenant_id:
+            clauses.append(
+                "document_id IN (SELECT document_id FROM document_tenants WHERE tenant_id = ?)"
+            )
+            params.append(tenant_id)
+        where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        cursor.execute(
+            f"""
+            SELECT path, title, level, parent_path, order_index
+            FROM sections
+            {where_sql}
+            ORDER BY path;
+            """,
+            params,
+        )
+        return cursor.fetchall()
+
+    # ------------------------------------------------------------------ document helpers
+    def iter_sections_by_document(self, document_id: str) -> List[sqlite3.Row]:
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "SELECT * FROM sections WHERE document_id = ? ORDER BY order_index",
+            (document_id,),
+        )
+        return cursor.fetchall()
+
+    def iter_chunks(self, document_id: Optional[str] = None) -> List[sqlite3.Row]:
+        cursor = self.conn.cursor()
+        if document_id:
             cursor.execute(
-                "SELECT path, title, level, parent_path, order_index FROM sections ORDER BY path;"
+                """
+                SELECT c.*, s.document_id, s.title as section_title
+                FROM chunks c
+                JOIN sections s ON s.path = c.section_path
+                WHERE s.document_id = ?
+                ORDER BY s.order_index, c.chunk_order
+                """,
+                (document_id,),
             )
         else:
             cursor.execute(
-                "SELECT path, title, level, parent_path, order_index FROM sections WHERE level <= ? ORDER BY path;",
-                (max_level,),
+                """
+                SELECT c.*, s.document_id, s.title as section_title
+                FROM chunks c
+                JOIN sections s ON s.path = c.section_path
+                ORDER BY s.document_id, s.order_index, c.chunk_order
+                """
             )
         return cursor.fetchall()
+
+    def delete_document(self, document_id: str) -> None:
+        cursor = self.conn.cursor()
+        cursor.execute("DELETE FROM sections WHERE document_id = ?", (document_id,))
+        cursor.execute(
+            "DELETE FROM document_tenants WHERE document_id = ?",
+            (document_id,),
+        )
+        cursor.execute(
+            """
+            DELETE FROM chunks
+            WHERE section_path NOT IN (SELECT path FROM sections)
+            """
+        )
+        cursor.execute(
+            "DELETE FROM sections_fts WHERE rowid NOT IN (SELECT rowid FROM sections)"
+        )
+        self.conn.commit()
+
+    def clear_all(self) -> None:
+        cursor = self.conn.cursor()
+        cursor.executescript(
+            """
+            DELETE FROM sections;
+            DELETE FROM chunks;
+            DELETE FROM sections_fts;
+            DELETE FROM tenants;
+            DELETE FROM document_tenants;
+            """
+        )
+        self.conn.commit()
 
     def fetch_neighbors(self, path: str, *, window: int = 1) -> List[sqlite3.Row]:
         """Return neighboring sections based on order index within the same parent."""
@@ -230,4 +428,3 @@ class SQLiteHyperlinkStore:
 
 
 __all__ = ["SQLiteHyperlinkStore", "SQLiteHyperlinkConfig"]
-

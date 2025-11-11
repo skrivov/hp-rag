@@ -5,6 +5,7 @@ from .chunker import Chunker, ChunkConfig, SectionChunk
 from .simple_chunker import ParagraphChunker
 from .markdown import MarkdownTOCBuilder, MarkdownTOCBuilderConfig
 from .pipeline import IngestionPipeline, IngestionResult
+from .tenant_extractor import TenantExtractor, TenantExtractorConfig
 
 try:
     from .pdf import PyMuPDFTOCBuilder, PyMuPDFTOCBuilderConfig
@@ -25,4 +26,6 @@ __all__ = [
     "ParagraphChunker",
     "MarkdownTOCBuilder",
     "MarkdownTOCBuilderConfig",
+    "TenantExtractor",
+    "TenantExtractorConfig",
 ] + __all_pdf__

@@ -19,6 +19,26 @@ For a one-page overview of the corpus, question set, metrics, and current compar
 - Run baseline evaluations: `uv run python scripts/run_evals.py ./datasets/questions.jsonl ./artifacts/eval.json --sqlite-db ./artifacts/hyperlink.db --faiss-dir ./artifacts/faiss_index`
 - Render comparison report: `uv run python scripts/report.py ./artifacts/eval.json --output ./artifacts/report.md`
 
+## Streaming Server
+- Launch the FastAPI service with SSE streaming via `uv run uvicorn src.server.api:app --reload`. Ensure `.env` defines `OPENAI_API_KEY` (plus `LLM_MODEL`, `SELECTOR_MODEL`, and `EMBEDDING_MODEL` as needed).
+- Create a run using `POST /api/chat/runs` (body: `{"system": "hp-rag", "message": "How are duties calculated?"}`) and consume events from `GET /api/chat/stream?run_id=<id>`.
+- During development you can skip the handshake with `GET /api/chat/stream?system=hp-rag&q=<query>`. Each SSE carries `event: token` deltas or architect-facing `event: event` diagnostics, followed by `event: done`.
+- `GET /api/runs/{run_id}` returns the persisted transcript + diagnostics (stored under `RUNS_DB_PATH`, default `./artifacts/server_runs.db`), while `GET /api/healthz` is a simple readiness probe.
+- Configure retention with `RUN_TTL_SECONDS` (seconds, default one day); older runs are purged automatically.
+- Event envelopes follow the schema in `src/rag/server-feature.md`, so UI layers can render both the user chat stream and the monitoring timeline without additional mapping.
+
+## Document Browser
+- Upload documents via `POST /api/documents/upload` (multipart `file`, optional `title`). Uploads queue for ingestion, populate SQLite (HP-RAG) and rebuild the FAISS index (Vector RAG) automatically.
+- List and inspect documents through `GET /api/documents` and `GET /api/documents/{id}`; fetch a text rendering with `GET /api/documents/{id}/body`.
+- Discover available document browsers with `GET /api/navigation` (`documents` section) and explore system-specific views through plugin routes:
+  - HP-RAG TOC/hyperlink explorer: `/api/plugins/hp-rag/documents/{id}/toc`, `/hyperlinks`, `/chunks`.
+  - Vector RAG chunk/search APIs: `/api/plugins/rag/documents/{id}/chunks` and `/search?q=...`.
+- Purge all artifacts (SQLite sections, FAISS index, uploads) via `DELETE /api/documents?force=true`. Configure storage roots with `SQLITE_DB`, `FAISS_INDEX_DIR`, and `UPLOADS_DIR`.
+
+## Traces & Navigation
+- `GET /api/traces` lists recent chat runs (filter with `?q=`), `GET /api/traces/{run_id}` fetches one trace, and `GET /api/traces/compare?run_a=...&run_b=...` returns two traces side-by-side for investigation.
+- `GET /api/navigation` exposes menu metadata for Documents, Chat (placeholder), and Traces so the UI can render the three top-level items with submenus sourced from registered plugins.
+
 ## Key Code Elements
 - `src/hp_rag/retriever.py` — LLM-guided TOC filter that selects hyperlink sections from SQLite and returns structured contexts.
 - `src/rag/retriever.py` — FAISS-backed semantic retriever that mirrors the HP-RAG interface for apples-to-apples comparisons.
