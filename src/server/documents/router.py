@@ -56,7 +56,7 @@ async def list_documents(
                 "section_count": doc.section_count,
                 "chunk_count": doc.chunk_count,
                 "plugins": [_serialize_plugin(state) for state in doc.plugin_states],
-                "tenants": [tenant.__dict__ for tenant in doc.tenants],
+                "tenants": [_serialize_tenant(tenant) for tenant in doc.tenants],
             }
             for doc in docs
         ]
@@ -75,7 +75,7 @@ async def get_document(document_id: str, service: DocumentService = Depends(get_
         "section_count": doc.section_count,
         "chunk_count": doc.chunk_count,
         "plugins": [_serialize_plugin(state) for state in doc.plugin_states],
-        "tenants": [tenant.__dict__ for tenant in doc.tenants],
+        "tenants": [_serialize_tenant(tenant) for tenant in doc.tenants],
     }
 
 
@@ -88,6 +88,16 @@ def _serialize_plugin(state):
             "error": getattr(state, "error", None),
         }
     return state
+
+
+def _serialize_tenant(tenant):
+    if hasattr(tenant, "tenant_id"):
+        return {
+            "tenant_id": tenant.tenant_id,
+            "name": getattr(tenant, "name", None),
+            "role": getattr(tenant, "role", None),
+        }
+    return tenant
 
 
 @router.get("/{document_id}/body")

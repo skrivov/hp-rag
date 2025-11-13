@@ -5,7 +5,7 @@ import json
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .models import RunConfig
@@ -206,6 +206,51 @@ class RunStore:
                 "done": done_payload,
                 "error": None if (done_payload or {}).get("finish_reason") != "error" else (done_payload or {}).get("error"),
             }
+        finally:
+            conn.close()
+
+    async def list_runs(self, *, query: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
+        return await asyncio.to_thread(self._list_runs_sync, query, limit)
+
+    def _list_runs_sync(self, query: str | None, limit: int) -> list[dict[str, Any]]:
+        conn = self._connect()
+        try:
+            params: list[Any] = []
+            where = ""
+            if query:
+                like = f"%{query.lower()}%"
+                where = "WHERE LOWER(message) LIKE ? OR LOWER(run_id) LIKE ?"
+                params.extend([like, like])
+            params.append(limit)
+            rows = conn.execute(
+                f"""
+                SELECT * FROM runs
+                {where}
+                ORDER BY datetime(created_at) DESC
+                LIMIT ?
+                """,
+                params,
+            ).fetchall()
+            results: list[dict[str, Any]] = []
+            for row in rows:
+                done_payload = json.loads(row["done_payload"]) if row["done_payload"] else {}
+                metadata = json.loads(row["metadata"]) if row["metadata"] else {}
+                status = "running"
+                if row["finished_at"]:
+                    status = "error" if row["finish_reason"] == "error" else "ready"
+                results.append(
+                    {
+                        "run_id": row["run_id"],
+                        "system": row["system"],
+                        "message": row["message"],
+                        "created_at": row["created_at"],
+                        "status": status,
+                        "finish_reason": row["finish_reason"],
+                        "usage": done_payload.get("usage", {}),
+                        "metadata": metadata,
+                    }
+                )
+            return results
         finally:
             conn.close()
 

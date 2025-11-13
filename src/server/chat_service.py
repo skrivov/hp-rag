@@ -172,4 +172,4 @@ def _get_store(settings: Settings) -> RunStore:
     return _RUN_STORE
 
 
-__all__ = ["get_run_snapshot", "start_run", "stream_run"]
+__all__ = ["get_run_snapshot", "start_run", "stream_run", "list_runs"]
