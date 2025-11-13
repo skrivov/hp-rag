@@ -37,7 +37,7 @@ async def upload_document(
     return {
         "document_id": metadata.id,
         "status": metadata.status,
-        "plugins": [state.__dict__ for state in metadata.plugin_states],
+        "plugins": [_serialize_plugin(state) for state in metadata.plugin_states],
     }
 
 
@@ -55,7 +55,7 @@ async def list_documents(
                 "status": doc.status,
                 "section_count": doc.section_count,
                 "chunk_count": doc.chunk_count,
-                "plugins": [state.__dict__ for state in doc.plugin_states],
+                "plugins": [_serialize_plugin(state) for state in doc.plugin_states],
                 "tenants": [tenant.__dict__ for tenant in doc.tenants],
             }
             for doc in docs
@@ -74,9 +74,20 @@ async def get_document(document_id: str, service: DocumentService = Depends(get_
         "status": doc.status,
         "section_count": doc.section_count,
         "chunk_count": doc.chunk_count,
-        "plugins": [state.__dict__ for state in doc.plugin_states],
+        "plugins": [_serialize_plugin(state) for state in doc.plugin_states],
         "tenants": [tenant.__dict__ for tenant in doc.tenants],
     }
+
+
+def _serialize_plugin(state):
+    if hasattr(state, "plugin_name"):
+        return {
+            "plugin_name": state.plugin_name,
+            "status": getattr(state, "status", None),
+            "stats": getattr(state, "stats", {}),
+            "error": getattr(state, "error", None),
+        }
+    return state
 
 
 @router.get("/{document_id}/body")

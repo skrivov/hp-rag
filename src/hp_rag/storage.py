@@ -32,7 +32,7 @@ class SQLiteHyperlinkStore:
     @property
     def conn(self) -> sqlite3.Connection:
         if self._conn is None:
-            self._conn = sqlite3.connect(self.config.db_path)
+            self._conn = sqlite3.connect(self.config.db_path, check_same_thread=False)
             self._conn.row_factory = sqlite3.Row
             if self.config.enable_wal:
                 self._conn.execute("PRAGMA journal_mode=WAL;")
